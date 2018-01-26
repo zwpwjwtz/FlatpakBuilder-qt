@@ -1,0 +1,6 @@
+*.bak
+FlatpakBuilder-qt
+*.o
+moc*
+ui*.h
+*.pro.user
