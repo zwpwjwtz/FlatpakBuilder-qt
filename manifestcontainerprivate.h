@@ -18,9 +18,6 @@ class ManifestContainerPrivate : public QObject
 
 public:
 
-    explicit ManifestContainerPrivate(QObject *parent = 0);
-    ManifestContainer* q_ptr;
-
     QString appID;
     QString branchName;
     QString runtimeName;
@@ -32,6 +29,9 @@ public:
     QList<QString> tags;
     QList<QString> finishArgs;
     QList<ManifestContainer::ModuleProperty> modules;
+
+protected:
+    ManifestContainer* q_ptr;
 };
 
 #endif // MANIFESTCONTAINERPRIVATE_H

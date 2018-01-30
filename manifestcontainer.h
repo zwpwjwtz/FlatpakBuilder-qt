@@ -102,6 +102,9 @@ public:
     ModuleProperty getModuleByName(QString name);
     void setModuleByName(QString name, const ModuleProperty module);
     void removeModuleByName(QString name);
+
+protected:
+    ManifestContainerPrivate* d_ptr;
 };
 
 #endif // MANIFESTCONTAINER_H

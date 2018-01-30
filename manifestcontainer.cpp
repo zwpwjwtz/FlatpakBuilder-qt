@@ -12,7 +12,7 @@ QJsonArray ManifestContainer_strListToJsonArray(const QList<QString>& strList);
 
 ManifestContainer::ManifestContainer()
 {
-
+    this->d_ptr = new ManifestContainerPrivate();
 }
 
 ManifestContainer::ParseErrorNumber

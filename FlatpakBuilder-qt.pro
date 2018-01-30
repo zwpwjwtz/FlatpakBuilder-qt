@@ -26,7 +26,8 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += main.cpp \
     buildwizard.cpp \
     manifestcontainer.cpp \
-    exeprober.cpp
+    exeprober.cpp \
+    flatpaklauncher.cpp
 
 HEADERS  += \
     buildwizard.h \
@@ -34,7 +35,9 @@ HEADERS  += \
     manifestcontainerprivate.h \
     manifest_format.h \
     exeprober.h \
-    exeproberprivate.h
+    exeproberprivate.h \
+    flatpaklauncher.h \
+    flatpaklauncherprivate.h
 
 FORMS    += \
     buildwizard.ui
