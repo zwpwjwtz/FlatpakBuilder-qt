@@ -24,10 +24,17 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 
 SOURCES += main.cpp \
-    buildwizard.cpp
+    buildwizard.cpp \
+    manifestcontainer.cpp \
+    exeprober.cpp
 
 HEADERS  += \
-    buildwizard.h
+    buildwizard.h \
+    manifestcontainer.h \
+    manifestcontainerprivate.h \
+    manifest_format.h \
+    exeprober.h \
+    exeproberprivate.h
 
 FORMS    += \
     buildwizard.ui
