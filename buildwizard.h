@@ -28,6 +28,7 @@ private:
     QString lastFileFilter;
 
     QString getDefaultProjectName(QString fileName);
+    bool detectEssentials();
 };
 
 #endif // BUILDWIZARD_H
