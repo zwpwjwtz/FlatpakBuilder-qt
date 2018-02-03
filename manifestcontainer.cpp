@@ -45,8 +45,8 @@ ManifestContainer::parse(const QByteArray content)
     if (obj.isEmpty())
         return NoModules;
     options.cflags = obj2[FLATPAK_MANIFEST_PROP_BUILD_CFLAG].toString();
-    options.cxxflags = obj2[FLATPAK_MANIFEST_PROP_BUILD_CFLAG].toString();
-    options.cppflags = obj2[FLATPAK_MANIFEST_PROP_BUILD_CFLAG].toString();
+    options.cxxflags = obj2[FLATPAK_MANIFEST_PROP_BUILD_CXXFLAG].toString();
+    options.cppflags = obj2[FLATPAK_MANIFEST_PROP_BUILD_CPPFLAG].toString();
     options.prefix = obj2[FLATPAK_MANIFEST_PROP_BUILD_PREFIX].toString();
     options.configureArgs = ManifestContainer_jsonArrayToStrList(
                                     obj2[FLATPAK_MANIFEST_PROP_BUILD_CONFARG]
@@ -105,7 +105,8 @@ ManifestContainer::parse(const QByteArray content)
 
             source.type = obj3[FLATPAK_MANIFEST_PROP_SOURCES_TYPE].toString();
             source.url = obj3[FLATPAK_MANIFEST_PROP_SOURCES_URL].toString();
-            source.branch = obj3[FLATPAK_MANIFEST_PROP_SOURCES_BRANCH]
+            if (!source.branch.isEmpty())
+                source.branch = obj3[FLATPAK_MANIFEST_PROP_SOURCES_BRANCH]
                                     .toString();
             source.commands = ManifestContainer_jsonArrayToStrList(
                                     obj3[FLATPAK_MANIFEST_PROP_SOURCES_CMDS]
@@ -133,26 +134,35 @@ QByteArray ManifestContainer::toJson()
     obj[FLATPAK_MANIFEST_PROP_SDKNAME] = sdkName();
     obj[FLATPAK_MANIFEST_PROP_COMMAND] = command();
     obj[FLATPAK_MANIFEST_PROP_SEPLCL] = sepLocale();
-    obj[FLATPAK_MANIFEST_PROP_TAGS] =
+    if (!tags().empty())
+        obj[FLATPAK_MANIFEST_PROP_TAGS] =
                             ManifestContainer_strListToJsonArray(tags());
-    obj[FLATPAK_MANIFEST_PROP_FNARGS] =
+    if (!finishArgs().empty())
+        obj[FLATPAK_MANIFEST_PROP_FNARGS] =
                             ManifestContainer_strListToJsonArray(finishArgs());
 
     // Write build options
     QJsonObject obj2;
     AppBuildOptions options = buildOptions();
-    obj2[FLATPAK_MANIFEST_PROP_BUILD_CFLAG] = options.cflags ;
-    obj2[FLATPAK_MANIFEST_PROP_BUILD_CXXFLAG] = options.cxxflags;
-    obj2[FLATPAK_MANIFEST_PROP_BUILD_CPPFLAG] = options.cppflags;
-    obj2[FLATPAK_MANIFEST_PROP_BUILD_PREFIX] = options.prefix;
-    obj2[FLATPAK_MANIFEST_PROP_BUILD_CONFARG] =
+    if (!options.cflags.isEmpty())
+        obj2[FLATPAK_MANIFEST_PROP_BUILD_CFLAG] = options.cflags ;
+    if (!options.cxxflags.isEmpty())
+        obj2[FLATPAK_MANIFEST_PROP_BUILD_CXXFLAG] = options.cxxflags;
+    if (!options.cppflags.isEmpty())
+        obj2[FLATPAK_MANIFEST_PROP_BUILD_CPPFLAG] = options.cppflags;
+    if (!options.prefix.isEmpty())
+        obj2[FLATPAK_MANIFEST_PROP_BUILD_PREFIX] = options.prefix;
+    if (!options.configureArgs.empty())
+        obj2[FLATPAK_MANIFEST_PROP_BUILD_CONFARG] =
                 ManifestContainer_strListToJsonArray(options.configureArgs);
-    obj2[FLATPAK_MANIFEST_PROP_BUILD_MAKEARG] =
+    if (!options.makeArgs.empty())
+        obj2[FLATPAK_MANIFEST_PROP_BUILD_MAKEARG] =
                 ManifestContainer_strListToJsonArray(options.makeArgs);
-    obj2[FLATPAK_MANIFEST_PROP_BUILD_MINSARG] =
+    if (!options.makeInstallArgs.empty())
+        obj2[FLATPAK_MANIFEST_PROP_BUILD_MINSARG] =
                 ManifestContainer_strListToJsonArray(options.makeInstallArgs);
-    obj2[FLATPAK_MANIFEST_PROP_BUILD_CFLAG] = options.strip;
-    obj2[FLATPAK_MANIFEST_PROP_BUILD_CFLAG] = options.noDebugInfo;
+    obj2[FLATPAK_MANIFEST_PROP_BUILD_STRIP] = options.strip;
+    obj2[FLATPAK_MANIFEST_PROP_BUILD_NDBGINF] = options.noDebugInfo;
     obj[FLATPAK_MANIFEST_PROP_BUILDOPT] = obj2;
 
     // Write module properties
@@ -170,29 +180,41 @@ QByteArray ManifestContainer::toJson()
         obj2[FLATPAK_MANIFEST_PROP_MODULES_NAUTOGEN] = modules[i].noAutoGen;
         obj2[FLATPAK_MANIFEST_PROP_MODULES_NPARAMK] = modules[i].noParaMake;
         obj2[FLATPAK_MANIFEST_PROP_MODULES_NMKINST] = modules[i].noMakeInstall;
-        obj2[FLATPAK_MANIFEST_PROP_MODULES_BUILDSYS] = modules[i].buildSystem;
-        obj2[FLATPAK_MANIFEST_PROP_MODULES_BUILDCMD] =
+        if (!modules[i].buildSystem.isEmpty())
+            obj2[FLATPAK_MANIFEST_PROP_MODULES_BUILDSYS] =
+                                                        modules[i].buildSystem;
+        if (!modules[i].buildCommands.empty())
+            obj2[FLATPAK_MANIFEST_PROP_MODULES_BUILDCMD] =
                 ManifestContainer_strListToJsonArray(modules[i].buildCommands);
-        obj2[FLATPAK_MANIFEST_PROP_MODULES_INSTRULE] = modules[i].installRule;
-        obj2[FLATPAK_MANIFEST_PROP_MODULES_POSTINST] =
+        if (!modules[i].installRule.isEmpty())
+            obj2[FLATPAK_MANIFEST_PROP_MODULES_INSTRULE] =
+                                                        modules[i].installRule;
+        if (!modules[i].postInstall.empty())
+            obj2[FLATPAK_MANIFEST_PROP_MODULES_POSTINST] =
                 ManifestContainer_strListToJsonArray(modules[i].postInstall);
-        obj2[FLATPAK_MANIFEST_PROP_MODULES_CLEANUP] =
+        if (!modules[i].cleanUp.empty())
+            obj2[FLATPAK_MANIFEST_PROP_MODULES_CLEANUP] =
                 ManifestContainer_strListToJsonArray(modules[i].cleanUp);
 
         // Write module sources
         sourceArray = QJsonArray();
         for (j=0; j<modules[i].sources.count(); j++)
         {
+            obj3 = QJsonObject();
             obj3[FLATPAK_MANIFEST_PROP_SOURCES_TYPE] =
                                             modules[i].sources[j].type;
-            obj3[FLATPAK_MANIFEST_PROP_SOURCES_URL] =
+            if (!modules[i].sources[j].url.isEmpty())
+                obj3[FLATPAK_MANIFEST_PROP_SOURCES_URL] =
                                             modules[i].sources[j].url;
-            obj3[FLATPAK_MANIFEST_PROP_SOURCES_BRANCH] =
+            if (!modules[i].sources[j].branch.isEmpty())
+                obj3[FLATPAK_MANIFEST_PROP_SOURCES_BRANCH] =
                                             modules[i].sources[j].branch;
-            obj3[FLATPAK_MANIFEST_PROP_SOURCES_CMDS] =
+            if (!modules[i].sources[j].commands.isEmpty())
+                obj3[FLATPAK_MANIFEST_PROP_SOURCES_CMDS] =
                             ManifestContainer_strListToJsonArray(
                                                 modules[i].sources[j].commands);
-            obj3[FLATPAK_MANIFEST_PROP_SOURCES_DESTFILE] =
+            if (!modules[i].sources[j].destFilename.isEmpty())
+                obj3[FLATPAK_MANIFEST_PROP_SOURCES_DESTFILE] =
                                             modules[i].sources[j].destFilename;
             sourceArray.push_back(obj3);
         }
@@ -258,7 +280,7 @@ void ManifestContainer::setRuntimeVer(const QString runtimeVer)
 QString ManifestContainer::sdkName()
 {
     Q_D(ManifestContainer);
-    return d->runtimeName;
+    return d->sdkName;
 }
 
 void ManifestContainer::setSdkName(const QString sdkName)

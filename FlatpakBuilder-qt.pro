@@ -41,3 +41,7 @@ HEADERS  += \
 
 FORMS    += \
     buildwizard.ui
+
+target.path = $${PREFIX}/bin/
+
+INSTALLS += target

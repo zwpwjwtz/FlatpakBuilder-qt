@@ -12,6 +12,7 @@ class FlatpakLauncher : public QObject
     Q_OBJECT
     Q_DECLARE_PRIVATE(FlatpakLauncher)
 
+public:
     enum launcher_status
     {
         ready = 0,
@@ -26,12 +27,12 @@ class FlatpakLauncher : public QObject
         manifest_not_exists = 1,
         app_name_not_exists = 2,
         repo_not_exists = 3,
+        build_dir_not_exists = 4,
         exe_not_exists = 129,
         no_permission = 130,
         unknownError = 255,
     };
 
-public:
     FlatpakLauncher();
     QString builderPath();
     void setBuilderPath(QString path);
@@ -51,8 +52,8 @@ public:
     QByteArray output();
 
 signals:
-    void launcher_status_changed(launcher_status status);
-    void launcher_error(launcher_error_code errCode);
+    void launcher_status_changed(FlatpakLauncher::launcher_status status);
+    void launcher_error(FlatpakLauncher::launcher_error_code errCode);
 
 private slots:
     void onPrivateEvent(int eventType);

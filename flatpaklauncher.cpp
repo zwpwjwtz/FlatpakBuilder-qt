@@ -5,6 +5,7 @@
 
 #define FLATPAK_BUILDER_OPTIONS_FORCECLEAN "--force-clean"
 #define FLATPAK_BUILDER_OPTIONS_REPO "--repo"
+#define FLATPAK_OPTIONS_BUILD_BUNDLE "build-bundle"
 
 
 FlatpakLauncher::FlatpakLauncher()
@@ -87,7 +88,7 @@ bool FlatpakLauncher::build(QString manifest, QString buildDir)
 {
     Q_D(FlatpakLauncher);
 
-    if (d->fileExists(d->fp_path))
+    if (!d->fileExists(d->fpbuilder_path))
     {
         emit launcher_error(exe_not_exists);
         return false;
@@ -104,19 +105,18 @@ bool FlatpakLauncher::build(QString manifest, QString buildDir)
     args.append(QString(FLATPAK_BUILDER_OPTIONS_REPO));
     args.append(d->repoDirectory);
 
-    if (d->appName.isEmpty())
+    if (buildDir.isEmpty())
     {
-        emit launcher_error(app_name_not_exists);
+        emit launcher_error(build_dir_not_exists);
         return false;
     }
-    args.append(d->appName);
+    args.append(buildDir);
 
     if (manifest.isEmpty())
         return false;
     args.append(manifest);
 
-    d->cui.setArguments(d->arguments);
-    d->cui.start(d->fp_path);
+    d->cui.start(d->fpbuilder_path,args);
     emit launcher_status_changed(running);
 
     d->arguments = args;
@@ -127,14 +127,14 @@ bool FlatpakLauncher::buildBundle(QString targetFile)
 {
     Q_D(FlatpakLauncher);
 
-    if (d->fileExists(d->fpbuilder_path))
+    if (!d->fileExists(d->fp_path))
     {
         emit launcher_error(exe_not_exists);
         return false;
     }
 
     QList<QString> args;
-    args.append(FLATPAK_BUILDER_OPTIONS_FORCECLEAN);
+    args.append(FLATPAK_OPTIONS_BUILD_BUNDLE);
 
     if (d->repoDirectory.isEmpty())
     {
@@ -154,8 +154,7 @@ bool FlatpakLauncher::buildBundle(QString targetFile)
     }
     args.append(d->appName);
 
-    d->cui.setArguments(d->arguments);
-    d->cui.start(d->fpbuilder_path);
+    d->cui.start(d->fp_path, args);
     emit launcher_status_changed(running);
 
     d->arguments = args;
@@ -177,7 +176,8 @@ FlatpakLauncher::launcher_error_code FlatpakLauncher::errorCode()
 QByteArray FlatpakLauncher::output()
 {
     Q_D(FlatpakLauncher);
-    return d->cui.readAll();
+    return d->cui.readAllStandardOutput()
+                        .append(d->cui.readAllStandardError());
 }
 
 void FlatpakLauncher::onPrivateEvent(int eventType)

@@ -30,8 +30,8 @@ public:
         QList<QString> configureArgs;
         QList<QString> makeArgs;
         QList<QString> makeInstallArgs;
-        bool strip;
-        bool noDebugInfo;
+        bool strip = true;
+        bool noDebugInfo = true;
     };
 
     struct ModuleSource
@@ -46,9 +46,9 @@ public:
     struct ModuleProperty
     {
         QString name;
-        bool noAutoGen;
-        bool noParaMake;
-        bool noMakeInstall;
+        bool noAutoGen = true;
+        bool noParaMake = false;
+        bool noMakeInstall = false;
         QString buildSystem;
         QString buildDir;
         QString subdir;
