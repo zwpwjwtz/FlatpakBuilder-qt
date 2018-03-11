@@ -21,18 +21,25 @@ void DialogConfigModule::showEvent(QShowEvent* event)
     {
         case BuilderInstance::ArchiveSource:
             typeIndex = 3;
+            break;
         case BuilderInstance::GitSource:
             typeIndex = 0;
+            break;
         case BuilderInstance::BzrSource:
             typeIndex = 1;
+            break;
         case BuilderInstance::FileSource:
             typeIndex = 4;
+            break;
         case BuilderInstance::ScriptSource:
             typeIndex = 5;
+            break;
         case BuilderInstance::ShellSource:
             typeIndex = 6;
+            break;
         case BuilderInstance::PatchSource:
             typeIndex = 2;
+            break;
         default:
             typeIndex = -1;
     }

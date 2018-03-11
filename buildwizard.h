@@ -26,6 +26,7 @@ private slots:
     void on_buttonModuleAdd_clicked();
     void on_buttonModuleRemove_clicked();
     void on_buttonModuleConfig_clicked();
+    void on_tableModule_doubleClicked(const QModelIndex &index);
 
 private:
     Ui::BuildWizard *ui;

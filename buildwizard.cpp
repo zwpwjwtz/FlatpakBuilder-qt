@@ -203,7 +203,8 @@ void BuildWizard::startBuild()
     builder.setRuntime(ui->textRuntime->text());
     builder.setSdkName(ui->textSDK->text());
     builder.setRuntimeVer(ui->textRuntimeVer->text());
-    builder.setRunCmd(appName);
+    builder.setRunCmd(ui->textExeCmd->text());
+    builder.setOwnName(ui->textOwnName->text());
 
     BuilderInstance::AppPermissions permission = BuilderInstance::AllowIPC |
                                                  BuilderInstance::Device_DRI |
@@ -341,6 +342,10 @@ void BuildWizard::on_BuildWizard_currentIdChanged(int id)
                 builder.setSourceVer(sourceID, FPBDQT_SOURCE_BRANCH_DEFAULT);
                 updateModuleList();
             }
+            if (ui->textExeCmd->text().isEmpty())
+                ui->textExeCmd->setText(appName);
+            if (ui->textOwnName->text().isEmpty())
+                ui->textOwnName->setText(ui->textAppID->text());
             break;
         case 4:
             if (ui->textAppID->text().isEmpty())
@@ -405,4 +410,10 @@ void BuildWizard::on_buttonModuleConfig_clicked()
     builder.setSourceVer(sourceID, moduleConfig->sourceVersion);
     builder.setSourceCmd(sourceID, moduleConfig->sourceCommand);
     updateModuleList();
+}
+
+void BuildWizard::on_tableModule_doubleClicked(const QModelIndex &index)
+{
+    Q_UNUSED(index);
+    on_buttonModuleConfig_clicked();
 }
