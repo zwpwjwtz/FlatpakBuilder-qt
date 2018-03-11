@@ -5,7 +5,6 @@
 
 #include <QFileDialog>
 #include <QMessageBox>
-#include <QFile>
 
 #define FPBDQT_COMMAND_FLATPAK "/usr/bin/flatpak"
 #define FPBDQT_COMMAND_FPBUILDER "/usr/bin/flatpak-builder"
@@ -20,15 +19,9 @@
 #define FPBDQT_FILE_LOG_DEFAULT "build_log.txt"
 
 #define FPBDQT_APP_PREFIX_DEFAULT "com.example."
-#define FPBDQT_APP_MANIFEST_DEFAULT "manifest.json"
 #define FPBDQT_APP_BUILDDIR_DEFAULT "build"
 #define FPBDQT_APP_REPO_DEFAULT "repo"
 #define FPBDQT_APP_BRANCH_DEFAULT "master"
-#define FPBDQT_APP_FINARGS_SHARE_IPC "--share=ipc"
-#define FPBDQT_APP_FINARGS_SHARE_NET "--share=network"
-#define FPBDQT_APP_FINARGS_SOCKET_X11 "--socket=x11"
-#define FPBDQT_APP_FINARGS_DEVICE_DRI "--device=dri"
-#define FPBDQT_APP_FINARGS_FS_HOST "--filesystem=host"
 
 #define FPBDQT_SOURCE_BRANCH_DEFAULT "master"
 
@@ -39,12 +32,17 @@ BuildWizard::BuildWizard(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    connect(&fp_cui,
-            SIGNAL(launcher_status_changed(FlatpakLauncher::launcher_status)),
-            this,
-            SLOT(onCuiStatusChanged(FlatpakLauncher::launcher_status)));
 
-    buildStage = 0;
+    ui->tableModule->setHorizontalHeaderLabels({"ID",
+                                                "Type",
+                                                "Path / URL"});
+    ui->tableModule->setColumnHidden(0, true);
+
+    connect(&builder,
+           SIGNAL(builder_finished()),
+           this,
+           SLOT(onBuilderFinished()));
+    moduleConfig = nullptr;
 }
 
 BuildWizard::~BuildWizard()
@@ -87,8 +85,8 @@ bool BuildWizard::detectEssentials()
                               "to run flatpak-builder.");
         return false;
     }
-    fp_cui.setBuilderPath(FPBDQT_COMMAND_FPBUILDER);
-    fp_cui.setFlatpakPath(FPBDQT_COMMAND_FLATPAK);
+    builder.setFlatpakBuilderPath(FPBDQT_COMMAND_FPBUILDER);
+    builder.setFlatpakPath(FPBDQT_COMMAND_FLATPAK);
 
     // Check for qmake
     args.clear();
@@ -180,98 +178,72 @@ QString BuildWizard::findFirstDirEntry(QString path)
     return found;
 }
 
-bool BuildWizard::logCuiOutput(QString filePath, bool append)
+void BuildWizard::updateModuleList()
 {
-    QFile log(filePath);
-    if (append)
-        log.open(QFile::Append);
-    else
-        log.open(QFile::WriteOnly);
-    if (!log.isOpen())
-        return false;
-
-    log.write(fp_cui.output());
-    log.close();
-    return true;
+    ui->tableModule->setRowCount(0);
+    QVector<int> sourceIDs = builder.sourceList(moduleID);
+    for (int i=0; i<sourceIDs.count(); i++)
+    {
+        int sourceID = sourceIDs[i];
+        ui->tableModule->insertRow(i);
+        ui->tableModule->setItem(i, 0, new QTableWidgetItem(
+                                                QString::number(sourceID)));
+        ui->tableModule->setItem(i, 1, new QTableWidgetItem(
+                                            builder.sourceTypeToString(
+                                                builder.sourceType(sourceID))));
+        ui->tableModule->setItem(i, 2, new QTableWidgetItem(
+                                                builder.sourceURL(sourceID)));
+    }
 }
 
 void BuildWizard::startBuild()
 {
-    if (buildStage == 0)
-    {
-        // Create a manifest
-        ManifestContainer manifest;
-        ManifestContainer::ModuleProperty module;
-        ManifestContainer::ModuleSource source, source2;
-        manifest.setAppID(ui->textAppID->text());
-        manifest.setBranch(FPBDQT_APP_BRANCH_DEFAULT);
-        manifest.setRuntime(ui->textRuntime->text());
-        manifest.setSdkName(ui->textSDK->text());
-        manifest.setRuntimeVer(ui->textRuntimeVer->text());
-        manifest.setCommand(appName);
-        QList<QString> finishArgs;
-        finishArgs.push_back(FPBDQT_APP_FINARGS_DEVICE_DRI);
-        finishArgs.push_back(FPBDQT_APP_FINARGS_FS_HOST);
-        finishArgs.push_back(FPBDQT_APP_FINARGS_SHARE_IPC);
-        finishArgs.push_back(FPBDQT_APP_FINARGS_SHARE_NET);
-        finishArgs.push_back(FPBDQT_APP_FINARGS_SOCKET_X11);
-        manifest.setFinishArgs(finishArgs);
+    builder.setAppID(ui->textAppID->text());
+    builder.setBranch(FPBDQT_APP_BRANCH_DEFAULT);
+    builder.setRuntime(ui->textRuntime->text());
+    builder.setSdkName(ui->textSDK->text());
+    builder.setRuntimeVer(ui->textRuntimeVer->text());
+    builder.setRunCmd(appName);
 
-        // Setup the main module and its sources
-        module.name = appName;
-        source.type = "git";
-        source.url = ui->labelSrcDir->text().prepend("file://");
-        source.branch = FPBDQT_SOURCE_BRANCH_DEFAULT;
-        source2.type = "script";
-        source2.commands.append("qmake PREFIX=/app");
-        source2.destFilename = "configure";
-        module.sources.append(source);
-        module.sources.append(source2);
-        manifest.addModules(module);
-
-        // Write the manifest to file
-        QString manifest_path;
-        manifest_path = ui->textBuildPath->text()
-                .append('/')
-                .append(FPBDQT_APP_MANIFEST_DEFAULT);
-        QFile jsonFile(manifest_path);
-        jsonFile.open(QFile::WriteOnly);
-        jsonFile.write(manifest.toJson());
-        jsonFile.close();
-
-        // Launch flatpak-builder
-        fp_cui.setRepoDirectory(ui->textBuildPath->text()
-                                .append('/')
-                                .append(FPBDQT_APP_REPO_DEFAULT));
-        buildStage = 1;
-        fp_cui.build(manifest_path,
-                     ui->textBuildPath->text().
-                     append('/')
-                     .append(FPBDQT_APP_BUILDDIR_DEFAULT));
-    }
-    else if (buildStage == 1)
-    {
-        // Write log generated in last stage
-        logCuiOutput(ui->textBuildPath->text()
-                     .append('/')
-                     .append(FPBDQT_FILE_LOG_DEFAULT), false);
-
-        // Launch flatpak to build a bundle file
-        fp_cui.setAppName(ui->textAppID->text());
-        buildStage = 2;
-        fp_cui.buildBundle(ui->labelTargetFile->text());
-    }
+    BuilderInstance::AppPermissions permission = BuilderInstance::AllowIPC |
+                                                 BuilderInstance::Device_DRI |
+                                                 BuilderInstance::FS_ReadWrite;
+    if (ui->checkAudio->isChecked())
+        permission |= BuilderInstance::AudioAccess;
+    if (ui->checkNetwork->isChecked())
+        permission |= BuilderInstance::NetworkAccess;
+    if (ui->checkRootFS->isChecked())
+        permission |= BuilderInstance::FS_RootDir;
     else
-    {
-        // Write log generated in last stage
-        logCuiOutput(ui->textBuildPath->text()
-                     .append('/')
-                     .append(FPBDQT_FILE_LOG_DEFAULT), true);
+        permission |= BuilderInstance::FS_HomeDir;
+    if (ui->checkSysBus->isChecked())
+        permission |= BuilderInstance::SystemBusAccess;
+    if (ui->checkX11->isChecked())
+        permission |= BuilderInstance::X11Access;
+    builder.setPermission(permission);
 
-        // Finish
-        buildStage = 3;
-        next();
-    }
+    int sourceID = builder.addSource(moduleID);
+    builder.setSourceType(sourceID, BuilderInstance::ScriptSource);
+    builder.setSourceURL(sourceID, "configure");
+    builder.setSourceCmd(sourceID, "qmake PREFIX=/app");
+
+    builder.setWorkingDir(ui->textBuildPath->text());
+    builder.setBuildDir(ui->textBuildPath->text()
+                        .append('/')
+                        .append(FPBDQT_APP_BUILDDIR_DEFAULT));
+    builder.setRepoDir(ui->textBuildPath->text()
+                       .append('/')
+                       .append(FPBDQT_APP_REPO_DEFAULT));
+    builder.setBundleFile(ui->labelTargetFile->text());
+    builder.setLogFile(ui->textBuildPath->text()
+                        .append('/')
+                        .append(FPBDQT_FILE_LOG_DEFAULT));
+    builder.build();
+}
+
+void BuildWizard::onBuilderFinished()
+{
+    next();
 }
 
 void BuildWizard::on_pushButton_clicked()
@@ -332,7 +304,10 @@ void BuildWizard::on_BuildWizard_currentIdChanged(int id)
             break;
         case 3:
             if (ui->textBuildPath->text().isEmpty())
+            {
                 accepted = false;
+                break;
+            }
 
             if (ui->textRuntime->text().isEmpty())
             {
@@ -351,6 +326,21 @@ void BuildWizard::on_BuildWizard_currentIdChanged(int id)
                     ui->textSDK->setText(sdkName);
                 }
             }
+            if (builder.moduleList().isEmpty())
+            {
+                moduleID = builder.addModule();
+                builder.setModuleName(moduleID, appName);
+            }
+            if (ui->tableModule->rowCount() < 1)
+            {
+                int sourceID = builder.addSource(moduleID);
+                builder.setSourceType(sourceID, BuilderInstance::GitSource);
+                builder.setSourceURL(sourceID,
+                                     QString("file://")
+                                     .append(ui->labelSrcDir->text()));
+                builder.setSourceVer(sourceID, FPBDQT_SOURCE_BRANCH_DEFAULT);
+                updateModuleList();
+            }
             break;
         case 4:
             if (ui->textAppID->text().isEmpty())
@@ -364,7 +354,6 @@ void BuildWizard::on_BuildWizard_currentIdChanged(int id)
 #ifndef QT_DEBUG
                 button(WizardButton::BackButton)->setEnabled(false);
 #endif
-                buildStage = 0;
                 startBuild();
             }
             break;
@@ -379,8 +368,41 @@ void BuildWizard::on_BuildWizard_currentIdChanged(int id)
         this->back();
 }
 
-void BuildWizard::onCuiStatusChanged(FlatpakLauncher::launcher_status status)
+void BuildWizard::on_buttonModuleAdd_clicked()
 {
-    if (status == FlatpakLauncher::finished)
-        startBuild();
+    builder.addSource(moduleID);
+    updateModuleList();
+}
+
+void BuildWizard::on_buttonModuleRemove_clicked()
+{
+    int selectedIndex = ui->tableModule->currentRow();
+    if (selectedIndex < 0)
+        return;
+    int sourceID = ui->tableModule->item(selectedIndex, 0)
+                    ->data(0).toInt();
+    builder.removeSource(sourceID);
+    updateModuleList();
+}
+
+void BuildWizard::on_buttonModuleConfig_clicked()
+{
+    int selectedIndex = ui->tableModule->currentRow();
+    if (selectedIndex < 0)
+        return;
+    int sourceID = ui->tableModule->item(selectedIndex, 0)
+                    ->data(0).toInt();
+
+    if (moduleConfig == nullptr)
+        moduleConfig = new DialogConfigModule;
+    moduleConfig->sourceType = builder.sourceType(sourceID);
+    moduleConfig->sourceURL = builder.sourceURL(sourceID);
+    moduleConfig->sourceVersion = builder.sourceVer(sourceID);
+    moduleConfig->sourceCommand = builder.sourceCmd(sourceID);
+    moduleConfig->exec();
+    builder.setSourceType(sourceID, moduleConfig->sourceType);
+    builder.setSourceURL(sourceID, moduleConfig->sourceURL);
+    builder.setSourceVer(sourceID, moduleConfig->sourceVersion);
+    builder.setSourceCmd(sourceID, moduleConfig->sourceCommand);
+    updateModuleList();
 }

@@ -11,6 +11,8 @@ class ManifestContainer : public QObject
 {
     Q_OBJECT
     Q_DECLARE_PRIVATE(ManifestContainer)
+protected:
+    ManifestContainerPrivate* d_ptr;
 
 public:
     enum ParseErrorNumber
@@ -102,9 +104,7 @@ public:
     ModuleProperty getModuleByName(QString name);
     void setModuleByName(QString name, const ModuleProperty module);
     void removeModuleByName(QString name);
-
-protected:
-    ManifestContainerPrivate* d_ptr;
+    void clearModules();
 };
 
 #endif // MANIFESTCONTAINER_H

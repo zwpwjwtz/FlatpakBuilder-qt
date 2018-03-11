@@ -301,6 +301,33 @@
         <height>91</height>
        </rect>
       </property>
+      <property name="selectionBehavior">
+       <enum>QAbstractItemView::SelectRows</enum>
+      </property>
+      <property name="columnCount">
+       <number>3</number>
+      </property>
+      <attribute name="horizontalHeaderStretchLastSection">
+       <bool>true</bool>
+      </attribute>
+      <attribute name="verticalHeaderVisible">
+       <bool>false</bool>
+      </attribute>
+      <column>
+       <property name="text">
+        <string/>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string/>
+       </property>
+      </column>
+      <column>
+       <property name="text">
+        <string/>
+       </property>
+      </column>
      </widget>
      <widget class="QLabel" name="label_13">
       <property name="geometry">
@@ -341,7 +368,7 @@
        <string>-</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="buttonModuleAdd_2">
+     <widget class="QPushButton" name="buttonModuleConfig">
       <property name="geometry">
        <rect>
         <x>280</x>
@@ -496,7 +523,7 @@
         <bool>true</bool>
        </property>
       </widget>
-      <widget class="QCheckBox" name="checkAudio_2">
+      <widget class="QCheckBox" name="checkSysBus">
        <property name="geometry">
         <rect>
          <x>10</x>
@@ -512,7 +539,7 @@
         <bool>true</bool>
        </property>
       </widget>
-      <widget class="QCheckBox" name="checkRootFS_2">
+      <widget class="QCheckBox" name="checkX11">
        <property name="geometry">
         <rect>
          <x>10</x>

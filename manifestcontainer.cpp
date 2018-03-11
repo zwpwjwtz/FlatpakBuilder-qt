@@ -398,6 +398,12 @@ void ManifestContainer::removeModuleByName(QString name)
     }
 }
 
+void ManifestContainer::clearModules()
+{
+    Q_D(ManifestContainer);
+    d->modules.clear();
+}
+
 QList<QString> ManifestContainer_jsonArrayToStrList(const QJsonArray& array)
 {
     QList<QString> strList;

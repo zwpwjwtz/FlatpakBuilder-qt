@@ -2,8 +2,8 @@
 #define BUILDWIZARD_H
 
 #include <QWizard>
-#include "flatpaklauncher.h"
-
+#include "builderinstance.h"
+#include "dialogconfigmodule.h"
 
 namespace Ui {
 class BuildWizard;
@@ -18,26 +18,31 @@ public:
     ~BuildWizard();
 
 private slots:
+    void onBuilderFinished();
+
     void on_pushButton_clicked();
     void on_pushButton_2_clicked();
     void on_BuildWizard_currentIdChanged(int id);
-    void onCuiStatusChanged(FlatpakLauncher::launcher_status status);
+    void on_buttonModuleAdd_clicked();
+    void on_buttonModuleRemove_clicked();
+    void on_buttonModuleConfig_clicked();
 
 private:
     Ui::BuildWizard *ui;
+    DialogConfigModule *moduleConfig;
     QString appName;
     QString lastSrcPath;
     QString lastBuildPath;
     QString lastFileFilter;
-    FlatpakLauncher fp_cui;
-    int buildStage;
+    BuilderInstance builder;
+    int moduleID;
 
     QString getDefaultProjectName(QString fileName);
     bool detectEssentials();
     bool detectRuntime(QString& rtName, QString& rtVersion);
     bool detectSdk(QString& sdkName);
     QString findFirstDirEntry(QString path);
-    bool logCuiOutput(QString filePath, bool append);
+    void updateModuleList();
     void startBuild();
 };
 

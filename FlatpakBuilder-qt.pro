@@ -27,7 +27,9 @@ SOURCES += main.cpp \
     buildwizard.cpp \
     manifestcontainer.cpp \
     exeprober.cpp \
-    flatpaklauncher.cpp
+    flatpaklauncher.cpp \
+    builderinstance.cpp \
+    dialogconfigmodule.cpp
 
 HEADERS  += \
     buildwizard.h \
@@ -37,10 +39,14 @@ HEADERS  += \
     exeprober.h \
     exeproberprivate.h \
     flatpaklauncher.h \
-    flatpaklauncherprivate.h
+    flatpaklauncherprivate.h \
+    builderinstance.h \
+    builderinstanceprivate.h \
+    dialogconfigmodule.h
 
 FORMS    += \
-    buildwizard.ui
+    buildwizard.ui \
+    dialogconfigmodule.ui
 
 target.path = $${PREFIX}/bin/
 
