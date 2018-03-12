@@ -53,10 +53,29 @@ void DialogConfigModule::showEvent(QShowEvent* event)
 void DialogConfigModule::on_buttonBox_accepted()
 {
     switch (ui->comboBox->currentIndex()) {
-        case 0: // Git source
+        case 0:
             sourceType = BuilderInstance::GitSource;
-        break;
-        default:;
+            break;
+        case 1:
+            sourceType = BuilderInstance::BzrSource;
+            break;
+        case 2:
+            sourceType = BuilderInstance::PatchSource;
+            break;
+        case 3:
+            sourceType = BuilderInstance::ArchiveSource;
+            break;
+        case 4:
+            sourceType = BuilderInstance::FileSource;
+            break;
+        case 5:
+            sourceType = BuilderInstance::ScriptSource;
+            break;
+        case 6:
+            sourceType = BuilderInstance::ShellSource;
+            break;
+        default:
+            sourceType = BuilderInstance::UnknownSource;
     }
     sourceURL = ui->textURL->text();
     sourceVersion = ui->textVersion->text();

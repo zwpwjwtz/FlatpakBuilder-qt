@@ -321,7 +321,7 @@ BuilderInstance::SourceType BuilderInstance::sourceType(int sourceID)
         typeValue = FileSource;
     else if (typeString == FLATPAK_MANIFEST_SOURCE_TYPE_SCRIPT)
         typeValue = ScriptSource;
-    else if (typeString == FLATPAK_MANIFEST_SOURCE_TYPE_SCRIPT)
+    else if (typeString == FLATPAK_MANIFEST_SOURCE_TYPE_SHELL)
         typeValue = ShellSource;
     else if (typeString == FLATPAK_MANIFEST_SOURCE_TYPE_PATCH)
         typeValue = PatchSource;
