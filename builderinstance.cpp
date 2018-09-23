@@ -589,7 +589,9 @@ bool BuilderInstancePrivate::buildManifest()
     manifest.setFinishArgs(finishArgs);
 
     // Write the manifest to file
-    manifestPath = workingDir.append('/').append(FPBDQT_BUILDER_MANIFEST_DEFAULT);
+    manifestPath = QString(workingDir)
+                          .append('/')
+                          .append(FPBDQT_BUILDER_MANIFEST_DEFAULT);
     QFile jsonFile(manifestPath);
     jsonFile.open(QFile::WriteOnly);
     jsonFile.write(manifest.toJson());
@@ -602,6 +604,7 @@ void BuilderInstancePrivate::buildRepo()
 {
     // Launch flatpak-builder
     fp_cui.setRepoDirectory(repoDir);
+    fp_cui.setWorkingDirectory(workingDir);
     fp_cui.build(manifestPath, buildDir);
 }
 

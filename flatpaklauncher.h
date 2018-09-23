@@ -44,6 +44,8 @@ public:
     void setRepoDirectory(QString path);
     QString repoBranch();
     void setRepoBranch(QString branch);
+    QString workingDirectory();
+    void setWorkingDirectory(QString dir);
     QList<QString> arguments();
     bool build(QString manifest, QString buildDir);
     bool buildBundle(QString targetFile);

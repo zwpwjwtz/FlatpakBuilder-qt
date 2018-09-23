@@ -78,6 +78,18 @@ void FlatpakLauncher::setRepoBranch(QString branch)
     d->repoBranch = branch;
 }
 
+QString FlatpakLauncher::workingDirectory()
+{
+    Q_D(FlatpakLauncher);
+    return d->workingDir;
+}
+
+void FlatpakLauncher::setWorkingDirectory(QString dir)
+{
+    Q_D(FlatpakLauncher);
+    d->workingDir = dir;
+}
+
 QList<QString> FlatpakLauncher::arguments()
 {
     Q_D(FlatpakLauncher);
@@ -116,6 +128,7 @@ bool FlatpakLauncher::build(QString manifest, QString buildDir)
         return false;
     args.append(manifest);
 
+    d->cui.setWorkingDirectory(d->workingDir);
     d->cui.start(d->fpbuilder_path,args);
     emit launcher_status_changed(running);
 

@@ -24,8 +24,8 @@ public:
         SystemBusAccess = 16,
         Device_DRI = 32,
         FS_ReadWrite = 64,
-        FS_HomeDir = 8,
-        FS_RootDir = 16
+        FS_HomeDir = 128,
+        FS_RootDir = 256
     };
     Q_DECLARE_FLAGS(AppPermissions, AppPermission)
     enum SourceType

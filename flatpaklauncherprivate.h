@@ -29,6 +29,7 @@ public:
     QString appName;
     QString repoDirectory;
     QString repoBranch;
+    QString workingDir;
     QList<QString> arguments;
     FlatpakLauncher::launcher_error_code errorCode;
 
