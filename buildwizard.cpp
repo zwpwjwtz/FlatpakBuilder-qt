@@ -9,8 +9,8 @@
 #define FPBDQT_COMMAND_FLATPAK "/usr/bin/flatpak"
 #define FPBDQT_COMMAND_FPBUILDER "/usr/bin/flatpak-builder"
 #define FPBDQT_COMMAND_FPBUILDER_PROBEARGS "--version"
-#define FPBDQT_COMMAND_QMAKE "/usr/bin/qmake"
-#define FPBDQT_COMMAND_QMAKE_PROBEARGS "--version"
+#define FPBDQT_COMMAND_SDK_QMAKE "qmake"
+#define FPBDQT_COMMAND_SDK_QMAKE_PROBEARGS "--version"
 
 #define FPBDQT_LIBRARY_FLATPAK_RUNTIME "/var/lib/flatpak/runtime"
 
@@ -88,6 +88,7 @@ bool BuildWizard::detectEssentials()
     builder.setFlatpakBuilderPath(FPBDQT_COMMAND_FPBUILDER);
     builder.setFlatpakPath(FPBDQT_COMMAND_FLATPAK);
 
+    /*
     // Check for qmake
     args.clear();
     args.append(FPBDQT_COMMAND_QMAKE_PROBEARGS);
@@ -110,6 +111,7 @@ bool BuildWizard::detectEssentials()
                               "to run qmake.");
         return false;
     }
+    */
 
     return true;
 
@@ -224,9 +226,14 @@ void BuildWizard::startBuild()
     builder.setPermission(permission);
 
     int sourceID = builder.addSource(moduleID);
+    QDir sourceDir(lastSrcPath);
     builder.setSourceType(sourceID, BuilderInstance::ScriptSource);
     builder.setSourceURL(sourceID, "configure");
-    builder.setSourceCmd(sourceID, "qmake PREFIX=/app");
+    builder.setSourceCmd(sourceID, QString(FPBDQT_COMMAND_SDK_QMAKE)
+                                        .append(" -config release ")
+                                        .append(" PREFIX=/app ")
+                                        .append(sourceDir.relativeFilePath(
+                                                    ui->textProPath->text())));
 
     builder.setWorkingDir(ui->textBuildPath->text());
     builder.setBuildDir(ui->textBuildPath->text()
@@ -260,11 +267,11 @@ void BuildWizard::on_pushButton_clicked()
                      &lastFileFilter);
     if (path.isEmpty())
         return;
-    lastSrcPath = path;
     ui->textProPath->setText(path);
 
     QFileInfo proFile(path);
-    ui->labelSrcDir->setText(proFile.dir().path());
+    lastSrcPath = proFile.dir().path();
+    ui->labelSrcDir->setText(lastSrcPath);
 
     appName = proFile.fileName();
     appName.truncate(appName.indexOf('.'));
@@ -337,8 +344,7 @@ void BuildWizard::on_BuildWizard_currentIdChanged(int id)
                 int sourceID = builder.addSource(moduleID);
                 builder.setSourceType(sourceID, BuilderInstance::GitSource);
                 builder.setSourceURL(sourceID,
-                                     QString("file://")
-                                     .append(ui->labelSrcDir->text()));
+                                     QString("file://").append(lastSrcPath));
                 builder.setSourceVer(sourceID, FPBDQT_SOURCE_BRANCH_DEFAULT);
                 updateModuleList();
             }
@@ -416,4 +422,25 @@ void BuildWizard::on_tableModule_doubleClicked(const QModelIndex &index)
 {
     Q_UNUSED(index);
     on_buttonModuleConfig_clicked();
+}
+
+void BuildWizard::on_labelChangeSrcDir_linkActivated(const QString &link)
+{
+    Q_UNUSED(link)
+
+    QString path = QFileDialog::getExistingDirectory(this,
+                                                     "Select source directory",
+                                                     lastSrcPath);
+    if (path.isEmpty())
+        return;
+    if (!ui->textProPath->text().contains(path))
+    {
+        QMessageBox::critical(this, "Path error",
+                              "The project file must be within "
+                              "the source directory.");
+        return;
+    }
+
+    lastSrcPath = path;
+    ui->labelSrcDir->setText(lastSrcPath);
 }

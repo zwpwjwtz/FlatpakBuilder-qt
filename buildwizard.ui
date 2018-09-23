@@ -114,7 +114,7 @@
      <rect>
       <x>10</x>
       <y>120</y>
-      <width>361</width>
+      <width>281</width>
       <height>41</height>
      </rect>
     </property>
@@ -148,6 +148,28 @@
     </property>
     <property name="wordWrap">
      <bool>true</bool>
+    </property>
+   </widget>
+   <widget class="QLabel" name="labelChangeSrcDir">
+    <property name="geometry">
+     <rect>
+      <x>290</x>
+      <y>130</y>
+      <width>91</width>
+      <height>24</height>
+     </rect>
+    </property>
+    <property name="cursor">
+     <cursorShape>PointingHandCursor</cursorShape>
+    </property>
+    <property name="text">
+     <string>&lt;a href=&quot;#&quot;&gt;&lt;span style=&quot;text-decoration: none; color:#55aaff;&quot;&gt;Modify&lt;/span&gt;&lt;/a&gt;</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+    </property>
+    <property name="textInteractionFlags">
+     <set>Qt::LinksAccessibleByKeyboard|Qt::LinksAccessibleByMouse</set>
     </property>
    </widget>
   </widget>

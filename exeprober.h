@@ -1,14 +1,15 @@
 #ifndef EXEPROBER_H
 #define EXEPROBER_H
 
-#include <QObject>
-#include <QList>
+#include <QtGlobal>
+
 
 class ExeProberPrivate;
 
-class ExeProber : QObject
+class ExeProber
 {
     Q_DECLARE_PRIVATE(ExeProber)
+protected:
     ExeProberPrivate* d_ptr;
 
 public:

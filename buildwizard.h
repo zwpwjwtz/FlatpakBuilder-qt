@@ -27,6 +27,7 @@ private slots:
     void on_buttonModuleRemove_clicked();
     void on_buttonModuleConfig_clicked();
     void on_tableModule_doubleClicked(const QModelIndex &index);
+    void on_labelChangeSrcDir_linkActivated(const QString &link);
 
 private:
     Ui::BuildWizard *ui;

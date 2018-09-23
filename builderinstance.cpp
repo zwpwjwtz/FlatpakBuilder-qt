@@ -458,7 +458,7 @@ void BuilderInstance::setSourceCmd(int sourceID, QString command)
 {
     Q_D(BuilderInstance);
     d->sourceList[d->getSourceIndexByID(sourceID)].commands =
-            command.split('\n').toVector().toList();
+            command.split('\n', QString::SkipEmptyParts).toVector().toList();
 }
 
 void BuilderInstance::onPrivateEvent(int eventType)
