@@ -1,26 +1,17 @@
 #ifndef FLATPAKLAUNCHER_H
 #define FLATPAKLAUNCHER_H
 
-#include <QObject>
-#include <QList>
-#include <QString>
+#include "commandlauncher.h"
+
 
 class FlatpakLauncherPrivate;
 
-class FlatpakLauncher : public QObject
+class FlatpakLauncher : public CommandLauncher
 {
     Q_OBJECT
     Q_DECLARE_PRIVATE(FlatpakLauncher)
 
 public:
-    enum launcher_status
-    {
-        ready = 0,
-        running = 1,
-        finished = 2,
-        stopped = 3,
-    };
-
     enum launcher_error_code
     {
         ok = 0,
@@ -44,24 +35,12 @@ public:
     void setRepoDirectory(QString path);
     QString repoBranch();
     void setRepoBranch(QString branch);
-    QString workingDirectory();
-    void setWorkingDirectory(QString dir);
-    QList<QString> arguments();
     bool build(QString manifest, QString buildDir);
     bool buildBundle(QString targetFile);
-    int exitCode();
     launcher_error_code errorCode();
-    QByteArray output();
 
 signals:
-    void launcher_status_changed(FlatpakLauncher::launcher_status status);
     void launcher_error(FlatpakLauncher::launcher_error_code errCode);
-
-private slots:
-    void onPrivateEvent(int eventType);
-
-protected:
-    FlatpakLauncherPrivate* d_ptr;
 };
 
 #endif // FLATPAKLAUNCHER_H

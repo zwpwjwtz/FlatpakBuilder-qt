@@ -507,9 +507,9 @@ BuilderInstancePrivate::BuilderInstancePrivate(BuilderInstance* parent)
     buildStage = 0;
 
     connect(&fp_cui,
-            SIGNAL(launcher_status_changed(FlatpakLauncher::launcher_status)),
+            SIGNAL(launcher_status_changed(CommandLauncher::launcher_status)),
             this,
-            SLOT(onCuiStatusChanged(FlatpakLauncher::launcher_status)));
+            SLOT(onCuiStatusChanged(CommandLauncher::launcher_status)));
 }
 
 int BuilderInstancePrivate::getModuleIndexByID(int moduleID)
@@ -631,9 +631,9 @@ bool BuilderInstancePrivate::logCuiOutput(bool append)
 }
 
 void BuilderInstancePrivate::onCuiStatusChanged(
-                                    FlatpakLauncher::launcher_status status)
+                                    CommandLauncher::launcher_status status)
 {
-    if (status == FlatpakLauncher::finished)
+    if (status == CommandLauncher::finished)
         emit privateEvent(cui_finished);
 }
 

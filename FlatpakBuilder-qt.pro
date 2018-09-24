@@ -35,7 +35,8 @@ SOURCES += main.cpp \
     utils/flatpaklauncher.cpp \
     utils/builderinstance.cpp \
     dialogconfigmodule.cpp \
-    aboutwindow.cpp
+    aboutwindow.cpp \
+    utils/commandlauncher.cpp
 
 HEADERS  += \
     buildwizard.h \
@@ -49,7 +50,9 @@ HEADERS  += \
     utils/builderinstance.h \
     utils/builderinstanceprivate.h \
     dialogconfigmodule.h \
-    aboutwindow.h
+    aboutwindow.h \
+    utils/commandlauncher.h \
+    utils/commandlauncherprivate.h
 
 FORMS    += \
     buildwizard.ui \

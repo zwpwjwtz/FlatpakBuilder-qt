@@ -56,7 +56,7 @@ signals:
 
 public slots:
     void onCuiError(FlatpakLauncher::launcher_error_code errCode);
-    void onCuiStatusChanged(FlatpakLauncher::launcher_status status);
+    void onCuiStatusChanged(CommandLauncher::launcher_status status);
 };
 
 #endif // BUILDERINSTANCEPRIVATE_H

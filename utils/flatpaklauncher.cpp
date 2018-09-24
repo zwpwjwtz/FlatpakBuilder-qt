@@ -1,8 +1,6 @@
 #include "flatpaklauncher.h"
 #include "flatpaklauncherprivate.h"
 
-#include <QFileInfo>
-
 #define FLATPAK_BUILDER_OPTIONS_FORCECLEAN "--force-clean"
 #define FLATPAK_BUILDER_OPTIONS_REPO "--repo"
 #define FLATPAK_OPTIONS_BUILD_BUNDLE "build-bundle"
@@ -10,8 +8,9 @@
 
 FlatpakLauncher::FlatpakLauncher()
 {
-    this->d_ptr = new FlatpakLauncherPrivate;
-
+    if (this->d_ptr)
+        delete this->d_ptr;
+    this->d_ptr = new FlatpakLauncherPrivate(this);
     connect(this->d_ptr,
             SIGNAL(privateEvent(int)),
             this,
@@ -76,24 +75,6 @@ void FlatpakLauncher::setRepoBranch(QString branch)
 {
     Q_D(FlatpakLauncher);
     d->repoBranch = branch;
-}
-
-QString FlatpakLauncher::workingDirectory()
-{
-    Q_D(FlatpakLauncher);
-    return d->workingDir;
-}
-
-void FlatpakLauncher::setWorkingDirectory(QString dir)
-{
-    Q_D(FlatpakLauncher);
-    d->workingDir = dir;
-}
-
-QList<QString> FlatpakLauncher::arguments()
-{
-    Q_D(FlatpakLauncher);
-    return d->arguments;
 }
 
 bool FlatpakLauncher::build(QString manifest, QString buildDir)
@@ -174,51 +155,13 @@ bool FlatpakLauncher::buildBundle(QString targetFile)
     return true;
 }
 
-int FlatpakLauncher::exitCode()
-{
-    Q_D(FlatpakLauncher);
-    return d->cui.exitCode();
-}
-
 FlatpakLauncher::launcher_error_code FlatpakLauncher::errorCode()
 {
     Q_D(FlatpakLauncher);
     return d->errorCode;
 }
 
-QByteArray FlatpakLauncher::output()
+FlatpakLauncherPrivate::FlatpakLauncherPrivate(FlatpakLauncher *parent)
+    : CommandLauncherPrivate(parent)
 {
-    Q_D(FlatpakLauncher);
-    return d->cui.readAllStandardOutput()
-                        .append(d->cui.readAllStandardError());
-}
-
-void FlatpakLauncher::onPrivateEvent(int eventType)
-{
-    switch (eventType) {
-        case FlatpakLauncherPrivate::cui_finished:
-            emit launcher_status_changed(finished);
-            break;
-        default:
-            break;
-    }
-}
-
-FlatpakLauncherPrivate::FlatpakLauncherPrivate()
-{
-    connect(&cui,
-            SIGNAL(finished(int, QProcess::ExitStatus)),
-            this,
-            SLOT(onCuiFinished()));
-}
-
-bool FlatpakLauncherPrivate::fileExists(QString path)
-{
-    QFileInfo file(path);
-    return file.exists();
-}
-
-void FlatpakLauncherPrivate::onCuiFinished()
-{
-    emit privateEvent(cui_finished);
 }
