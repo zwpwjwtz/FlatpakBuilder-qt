@@ -3,7 +3,10 @@
 
 #include <QWizard>
 #include "builderinstance.h"
-#include "dialogconfigmodule.h"
+
+
+class DialogConfigModule;
+class AboutWindow;
 
 namespace Ui {
 class BuildWizard;
@@ -28,9 +31,11 @@ private slots:
     void on_buttonModuleConfig_clicked();
     void on_tableModule_doubleClicked(const QModelIndex &index);
     void on_labelChangeSrcDir_linkActivated(const QString &link);
+    void on_buttonAbout_clicked();
 
 private:
     Ui::BuildWizard *ui;
+    AboutWindow* about;
     DialogConfigModule *moduleConfig;
     QString appName;
     QString lastSrcPath;

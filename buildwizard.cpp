@@ -1,5 +1,7 @@
 #include "buildwizard.h"
 #include "ui_buildwizard.h"
+#include "dialogconfigmodule.h"
+#include "aboutwindow.h"
 #include "exeprober.h"
 #include "manifestcontainer.h"
 
@@ -38,16 +40,22 @@ BuildWizard::BuildWizard(QWidget *parent) :
                                                 "Path / URL"});
     ui->tableModule->setColumnHidden(0, true);
 
+    about = nullptr;
+    moduleConfig = nullptr;
+
     connect(&builder,
            SIGNAL(builder_finished()),
            this,
            SLOT(onBuilderFinished()));
-    moduleConfig = nullptr;
 }
 
 BuildWizard::~BuildWizard()
 {
     delete ui;
+    if (about)
+        delete about;
+    if (moduleConfig)
+        delete moduleConfig;
 }
 
 QString BuildWizard::getDefaultProjectName(QString fileName)
@@ -443,4 +451,11 @@ void BuildWizard::on_labelChangeSrcDir_linkActivated(const QString &link)
 
     lastSrcPath = path;
     ui->labelSrcDir->setText(lastSrcPath);
+}
+
+void BuildWizard::on_buttonAbout_clicked()
+{
+    if (!about)
+        about = new AboutWindow(this);
+    about->show();
 }

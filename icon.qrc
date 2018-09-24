@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/">
+        <file>icons/FlatpakBuilder.png</file>
+        <file>icons/information.png</file>
+    </qresource>
+</RCC>
