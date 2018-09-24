@@ -2,7 +2,8 @@
 #define DIALOGCONFIGMODULE_H
 
 #include <QDialog>
-#include "builderinstance.h"
+#include "utils/builderinstance.h"
+
 
 namespace Ui {
 class DialogConfigModule;

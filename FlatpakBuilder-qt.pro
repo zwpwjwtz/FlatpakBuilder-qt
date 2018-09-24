@@ -30,24 +30,24 @@ DEFINES += QT_DEPRECATED_WARNINGS APP_VERSION=\\\"$$VERSION\\\"
 
 SOURCES += main.cpp \
     buildwizard.cpp \
-    manifestcontainer.cpp \
-    exeprober.cpp \
-    flatpaklauncher.cpp \
-    builderinstance.cpp \
+    utils/manifestcontainer.cpp \
+    utils/exeprober.cpp \
+    utils/flatpaklauncher.cpp \
+    utils/builderinstance.cpp \
     dialogconfigmodule.cpp \
     aboutwindow.cpp
 
 HEADERS  += \
     buildwizard.h \
-    manifestcontainer.h \
-    manifestcontainerprivate.h \
-    manifest_format.h \
-    exeprober.h \
-    exeproberprivate.h \
-    flatpaklauncher.h \
-    flatpaklauncherprivate.h \
-    builderinstance.h \
-    builderinstanceprivate.h \
+    utils/manifestcontainer.h \
+    utils/manifestcontainerprivate.h \
+    utils/manifest_format.h \
+    utils/exeprober.h \
+    utils/exeproberprivate.h \
+    utils/flatpaklauncher.h \
+    utils/flatpaklauncherprivate.h \
+    utils/builderinstance.h \
+    utils/builderinstanceprivate.h \
     dialogconfigmodule.h \
     aboutwindow.h
 

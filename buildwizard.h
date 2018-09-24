@@ -2,7 +2,7 @@
 #define BUILDWIZARD_H
 
 #include <QWizard>
-#include "builderinstance.h"
+#include "utils/builderinstance.h"
 
 
 class DialogConfigModule;

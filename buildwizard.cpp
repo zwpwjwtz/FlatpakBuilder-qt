@@ -2,8 +2,8 @@
 #include "ui_buildwizard.h"
 #include "dialogconfigmodule.h"
 #include "aboutwindow.h"
-#include "exeprober.h"
-#include "manifestcontainer.h"
+#include "utils/exeprober.h"
+#include "utils/manifestcontainer.h"
 
 #include <QFileDialog>
 #include <QMessageBox>
