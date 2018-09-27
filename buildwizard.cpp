@@ -243,6 +243,7 @@ void BuildWizard::startBuild()
                                         .append(sourceDir.relativeFilePath(
                                                     ui->textProPath->text())));
 
+    builder.setMakingExecutable(ui->checkBuildExecutable->isChecked());
     builder.setWorkingDir(ui->textBuildPath->text());
     builder.setBuildDir(ui->textBuildPath->text()
                         .append('/')
@@ -380,6 +381,10 @@ void BuildWizard::on_BuildWizard_currentIdChanged(int id)
 #ifndef QT_DEBUG
                 button(WizardButton::BackButton)->setEnabled(false);
 #endif
+            ui->labelBuildResult->setText(
+                        QString("Building finished. You can find built package "
+                                "as well as build log <a href=\"%1\">here</a>.")
+                               .arg(builder.workingDir().prepend("file://")));
         default:;
     }
 

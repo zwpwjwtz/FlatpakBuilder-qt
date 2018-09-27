@@ -1,10 +1,19 @@
 #include <QFile>
+#include <QVariant>
 
 #include "builderinstance.h"
 #include "builderinstanceprivate.h"
 #include "manifest_format.h"
 
 #define FPBDQT_BUILDER_MANIFEST_DEFAULT "manifest.json"
+
+#define FPBDQT_BUILDER_COMPILER_GCC_PATH "/usr/bin/gcc"
+
+#define FPBDQT_BUILDER_INSTALLER_RESOURCES ":/installer/header.c\n" \
+                                           ":/installer/header.h"
+#define FPBDQT_BUILDER_INSTALLER_SOURCES "header.c"
+#define FPBDQT_BUILDER_INSTALLER_EXEC_HEADER "header"
+
 
 BuilderInstance::BuilderInstance()
 {
@@ -37,10 +46,46 @@ void BuilderInstance::build()
             break;
         case 3:
             d->logCuiOutput(true);
+            if (d->makingExecutable)
+            {
+                d->buildStage++;
+                emit builder_staged(BuildExecutable);
+                d->buildExecutableHeader(true);
+            }
+            else
+            {
+                d->buildStage = 0;
+                emit builder_finished();
+            }
+            break;
+        case 4:
+            d->logCuiOutput(true);
+            d->buildStage++;
+            d->buildExecutableHeader();
+            break;
+        case 5:
+            d->logCuiOutput(true);
+            d->buildStage++;
+            d->buildExecutable();
+            break;
+        case 6:
+            d->logCuiOutput(true);
             d->buildStage = 0;
             emit builder_finished();
         default:;
     }
+}
+
+bool BuilderInstance::makingExecutable()
+{
+    Q_D(BuilderInstance);
+    return d->makingExecutable;
+}
+
+void BuilderInstance::setMakingExecutable(bool executable)
+{
+    Q_D(BuilderInstance);
+    d->makingExecutable = executable;
 }
 
 int BuilderInstance::addModule()
@@ -466,12 +511,12 @@ void BuilderInstance::onPrivateEvent(int eventType)
     Q_D(BuilderInstance);
     switch (eventType)
     {
-        case BuilderInstancePrivate::cui_finished:
+        case BuilderInstancePrivate::fp_cui_finished:
             build();
             break;
-        case BuilderInstancePrivate::cui_error:
+        case BuilderInstancePrivate::fp_cui_error:
         {
-            switch (d->cuiErrorCode)
+            switch (d->fpCuiErrorCode)
             {
                 case FlatpakLauncher::ok:
                     emit builder_error(ok);
@@ -496,6 +541,27 @@ void BuilderInstance::onPrivateEvent(int eventType)
                     break;
                 default:;
             }
+            break;
+        }
+        case BuilderInstancePrivate::gcc_cui_finished:
+            build();
+            break;
+        case BuilderInstancePrivate::gcc_cui_error:
+        {
+            switch (d->gccCuiErrorCode)
+            {
+                case GCCLauncher::ok:
+                    emit builder_error(ok);
+                    break;
+                case GCCLauncher::exe_not_exists:
+                    emit builder_error(exe_not_exists);
+                    break;
+                case GCCLauncher::unknownError:
+                    emit builder_error(unknownError);
+                    break;
+                default:;
+            }
+            break;
         }
         default:;
     }
@@ -509,7 +575,19 @@ BuilderInstancePrivate::BuilderInstancePrivate(BuilderInstance* parent)
     connect(&fp_cui,
             SIGNAL(launcher_status_changed(CommandLauncher::launcher_status)),
             this,
-            SLOT(onCuiStatusChanged(CommandLauncher::launcher_status)));
+            SLOT(onFlatpakCuiStatusChanged(CommandLauncher::launcher_status)));
+    connect(&fp_cui,
+            SIGNAL(launcher_error(FlatpakLauncher::launcher_error_code)),
+            this,
+            SLOT(onFlatpakCuiError(FlatpakLauncher::launcher_error_code)));
+    connect(&gcc_cui,
+            SIGNAL(launcher_status_changed(CommandLauncher::launcher_status)),
+            this,
+            SLOT(onGCCCuiStatusChanged(CommandLauncher::launcher_status)));
+    connect(&gcc_cui,
+            SIGNAL(launcherError(GCCLauncher::ErrorCode)),
+            this,
+            SLOT(onGCCCuiError(GCCLauncher::ErrorCode)));
 }
 
 int BuilderInstancePrivate::getModuleIndexByID(int moduleID)
@@ -615,6 +693,93 @@ void BuilderInstancePrivate::buildBundle()
     fp_cui.buildBundle(bundlePath);
 }
 
+void BuilderInstancePrivate::buildExecutableHeader(bool preRun)
+{
+    Q_Q(BuilderInstance);
+
+    // Check if the built bundle exists
+    QFile bundleFile(bundlePath);
+    if (!bundleFile.exists())
+    {
+        emit q->builder_error(BuilderInstance::bundle_not_exists);
+        buildStage = 0;
+        return;
+    }
+
+    // Extract source file for header compiling
+    QFile tempFile;
+    QFile resourceFile;
+    QList<QString> fileList(QString(FPBDQT_BUILDER_INSTALLER_RESOURCES)
+                                   .split('\n'));
+    for (int i=0; i<fileList.count(); i++)
+    {
+        resourceFile.setFileName(fileList[i]);
+        resourceFile.open(QFile::ReadOnly);
+
+        fileList[i] = fileList[i].mid(fileList[i].lastIndexOf('/') + 1);
+        tempFile.setFileName(fileList[i]);
+        tempFile.open(QFile::WriteOnly);
+        tempFile.write(resourceFile.readAll());
+        tempFile.close();
+
+        resourceFile.close();
+    }
+
+    // Launch compiler to build a executable header for built bundle
+    QString headerFileName = FPBDQT_BUILDER_INSTALLER_EXEC_HEADER;
+    gcc_cui.setExecutablePath(FPBDQT_BUILDER_COMPILER_GCC_PATH);
+    gcc_cui.setSourceFiles(QString(FPBDQT_BUILDER_INSTALLER_SOURCES)
+                                  .split('\n'));
+    if (!preRun)
+    {
+        QFile headerFile(QString(workingDir).append('/')
+                                .append(headerFileName));
+        if (!headerFile.exists())
+        {
+            emit q->builder_error(BuilderInstance::compiler_not_working);
+            buildStage = 0;
+            return;
+        }
+        gcc_cui.addDefinition("INSTALLER_HEADER_SIZE", headerFile.size());
+    }
+    gcc_cui.addDefinition("FLATPAK_BUNDLE_NAME", manifest.appID());
+    gcc_cui.addDefinition("FLATPAK_BUNDLE_SIZE", bundleFile.size());
+    gcc_cui.setWorkingDirectory(workingDir);
+    gcc_cui.setStripAfterBuild(true);
+    gcc_cui.compile(headerFileName);
+}
+
+void BuilderInstancePrivate::buildExecutable()
+{
+    Q_Q(BuilderInstance);
+
+    // Check if the built header exists
+    QString headerFileName = QString(workingDir).append('/')
+                                .append(FPBDQT_BUILDER_INSTALLER_EXEC_HEADER);
+    QFile headerFile(headerFileName);
+    if (!headerFile.exists())
+    {
+        emit q->builder_error(BuilderInstance::compiler_not_working);
+        buildStage = 0;
+        return;
+    }
+
+    const int CopyBlockSize = 1024 * 1024;
+    QFile bundleFile(bundlePath);
+    bundleFile.open(QFile::ReadOnly);
+    headerFile.open(QFile::Append);
+    while (!bundleFile.atEnd())
+    {
+        headerFile.write(bundleFile.read(CopyBlockSize));
+    }
+    headerFile.close();
+    bundleFile.close();
+
+    QFile::remove(bundlePath);
+    QFile::rename(headerFileName, bundlePath);
+    q->build();
+}
+
 bool BuilderInstancePrivate::logCuiOutput(bool append)
 {
     QFile log(logPath);
@@ -626,20 +791,34 @@ bool BuilderInstancePrivate::logCuiOutput(bool append)
         return false;
 
     log.write(fp_cui.output());
+    log.write(gcc_cui.output());
     log.close();
     return true;
 }
 
-void BuilderInstancePrivate::onCuiStatusChanged(
+void BuilderInstancePrivate::onFlatpakCuiStatusChanged(
                                     CommandLauncher::launcher_status status)
 {
     if (status == CommandLauncher::finished)
-        emit privateEvent(cui_finished);
+        emit privateEvent(fp_cui_finished);
 }
 
-void BuilderInstancePrivate::onCuiError(
+void BuilderInstancePrivate::onFlatpakCuiError(
                                 FlatpakLauncher::launcher_error_code errCode)
 {
-    cuiErrorCode = errCode;
-    emit privateEvent(cui_error);
+    fpCuiErrorCode = errCode;
+    emit privateEvent(fp_cui_error);
+}
+
+void BuilderInstancePrivate::onGCCCuiError(GCCLauncher::ErrorCode errCode)
+{
+    gccCuiErrorCode = errCode;
+    emit privateEvent(gcc_cui_error);
+}
+
+void BuilderInstancePrivate::onGCCCuiStatusChanged(
+                                    CommandLauncher::launcher_status status)
+{
+    if (status == CommandLauncher::finished)
+        emit privateEvent(gcc_cui_finished);
 }

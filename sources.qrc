@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/">
+        <file>installer/header.c</file>
+        <file>installer/header.h</file>
+    </qresource>
+</RCC>

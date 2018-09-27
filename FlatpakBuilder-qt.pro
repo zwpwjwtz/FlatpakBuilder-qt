@@ -36,7 +36,8 @@ SOURCES += main.cpp \
     utils/builderinstance.cpp \
     dialogconfigmodule.cpp \
     aboutwindow.cpp \
-    utils/commandlauncher.cpp
+    utils/commandlauncher.cpp \
+    utils/gcclauncher.cpp
 
 HEADERS  += \
     buildwizard.h \
@@ -52,7 +53,9 @@ HEADERS  += \
     dialogconfigmodule.h \
     aboutwindow.h \
     utils/commandlauncher.h \
-    utils/commandlauncherprivate.h
+    utils/commandlauncherprivate.h \
+    utils/gcclauncher.h \
+    utils/gcclauncherprivate.h
 
 FORMS    += \
     buildwizard.ui \
@@ -64,4 +67,5 @@ target.path = $${PREFIX}/bin/
 INSTALLS += target
 
 RESOURCES += \
-    icon.qrc
+    icon.qrc \
+    sources.qrc

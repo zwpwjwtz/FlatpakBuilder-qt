@@ -48,6 +48,8 @@ public:
         build_dir_not_exists = 4,
         exe_not_exists = 129,
         no_permission = 130,
+        bundle_not_exists = 131,
+        compiler_not_working = 132,
         unknownError = 255,
     };
     enum BuilderStage
@@ -55,11 +57,15 @@ public:
         Wait = 0,
         BuildManifest = 1,
         BuildRepo = 2,
-        BuildBundle = 3
+        BuildBundle = 3,
+        BuildExecutable = 4
     };
 
     explicit BuilderInstance();
     void build();
+
+    bool makingExecutable();
+    void setMakingExecutable(bool executable);
 
     int addModule();
     void removeModule(int moduleID);
