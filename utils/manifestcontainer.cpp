@@ -216,6 +216,9 @@ QByteArray ManifestContainer::toJson()
             if (!modules[i].sources[j].destFilename.isEmpty())
                 obj3[FLATPAK_MANIFEST_PROP_SOURCES_DESTFILE] =
                                             modules[i].sources[j].destFilename;
+            if (!modules[i].sources[j].checksum.algorithm.isEmpty())
+                obj3[modules[i].sources[j].checksum.algorithm] =
+                        QString(modules[i].sources[j].checksum.value.toHex());
             sourceArray.push_back(obj3);
         }
         obj2[FLATPAK_MANIFEST_PROP_MODULES_SOURCES] = sourceArray;

@@ -37,7 +37,9 @@ SOURCES += main.cpp \
     dialogconfigmodule.cpp \
     aboutwindow.cpp \
     utils/commandlauncher.cpp \
-    utils/gcclauncher.cpp
+    utils/gcclauncher.cpp \
+    utils/compressorlauncher.cpp \
+    utils/checksumcalculator.cpp
 
 HEADERS  += \
     buildwizard.h \
@@ -55,7 +57,10 @@ HEADERS  += \
     utils/commandlauncher.h \
     utils/commandlauncherprivate.h \
     utils/gcclauncher.h \
-    utils/gcclauncherprivate.h
+    utils/gcclauncherprivate.h \
+    utils/compressorlauncher.h \
+    utils/compressorlauncherprivate.h \
+    utils/checksumcalculator.h
 
 FORMS    += \
     buildwizard.ui \

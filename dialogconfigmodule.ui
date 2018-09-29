@@ -42,6 +42,11 @@
        </item>
        <item>
         <property name="text">
+         <string>Directory</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
          <string>Archive source</string>
         </property>
        </item>

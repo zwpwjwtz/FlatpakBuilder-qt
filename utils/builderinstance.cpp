@@ -4,6 +4,7 @@
 #include "builderinstance.h"
 #include "builderinstanceprivate.h"
 #include "manifest_format.h"
+#include "checksumcalculator.h"
 
 #define FPBDQT_BUILDER_MANIFEST_DEFAULT "manifest.json"
 
@@ -27,24 +28,36 @@ BuilderInstance::BuilderInstance()
 void BuilderInstance::build()
 {
     Q_D(BuilderInstance);
+
+    bool finished = false;
     switch (d->buildStage)
     {
         case 0:
             d->buildStage++;
-            emit builder_staged(BuildManifest);
-            d->buildManifest();
+            emit builder_staged(PrepareSource);
+            d->manifest.clearModules();
+            if (!d->prepareSource())
+                break;
         case 1:
+            d->buildStage++;
+            emit builder_staged(BuildManifest);
+            if (!d->buildManifest())
+            {
+                finished = true;
+                break;
+            }
+        case 2:
             d->buildStage++;
             emit builder_staged(BuildRepo);
             d->buildRepo();
             break;
-        case 2:
+        case 3:
             d->logCuiOutput(false);
             d->buildStage++;
             emit builder_staged(BuildBundle);
             d->buildBundle();
             break;
-        case 3:
+        case 4:
             d->logCuiOutput(true);
             if (d->makingExecutable)
             {
@@ -53,26 +66,27 @@ void BuilderInstance::build()
                 d->buildExecutableHeader(true);
             }
             else
-            {
-                d->buildStage = 0;
-                emit builder_finished();
-            }
-            break;
-        case 4:
-            d->logCuiOutput(true);
-            d->buildStage++;
-            d->buildExecutableHeader();
+                finished = true;
             break;
         case 5:
             d->logCuiOutput(true);
             d->buildStage++;
-            d->buildExecutable();
+            d->buildExecutableHeader();
             break;
         case 6:
             d->logCuiOutput(true);
-            d->buildStage = 0;
-            emit builder_finished();
+            d->buildStage++;
+            d->buildExecutable();
+            break;
+        case 7:
+            d->logCuiOutput(true);
+            finished = true;
         default:;
+    }
+    if (finished)
+    {
+        d->buildStage = 0;
+        emit builder_finished();
     }
 }
 
@@ -370,6 +384,8 @@ BuilderInstance::SourceType BuilderInstance::sourceType(int sourceID)
         typeValue = ShellSource;
     else if (typeString == FLATPAK_MANIFEST_SOURCE_TYPE_PATCH)
         typeValue = PatchSource;
+    else if (typeString == FLATPAK_MANIFEST_SOURCE_TYPE_DIRECTORY)
+        typeValue = DirectorySource;
     else
         typeValue = UnknownSource;
 
@@ -404,6 +420,9 @@ void BuilderInstance::setSourceType(int sourceID, SourceType srcType)
         case PatchSource:
             typeString = FLATPAK_MANIFEST_SOURCE_TYPE_PATCH;
             break;
+        case DirectorySource:
+            typeString = FLATPAK_MANIFEST_SOURCE_TYPE_DIRECTORY;
+            break;
         default:;
     }
 
@@ -436,6 +455,9 @@ QString BuilderInstance::sourceTypeToString(SourceType srcType)
             break;
         case PatchSource:
             typeString = "Patch File";
+            break;
+        case DirectorySource:
+            typeString = "Directory";
             break;
         default:
             typeString = "Unknown";
@@ -511,6 +533,27 @@ void BuilderInstance::onPrivateEvent(int eventType)
     Q_D(BuilderInstance);
     switch (eventType)
     {
+        case BuilderInstancePrivate::compressor_finished:
+            if (d->prepareSource())
+                build();
+            else
+                d->prepareSource();
+            break;
+        case BuilderInstancePrivate::compressor_error:
+            switch (d->compressorErrorCode)
+            {
+                case CompressorLauncher::ok:
+                    emit builder_error(ok);
+                    break;
+                case CompressorLauncher::command_not_exists:
+                    emit builder_error(compressor_not_working);
+                    break;
+                case CompressorLauncher::unknownError:
+                default:
+                    emit builder_error(unknownError);
+                    break;
+            }
+            break;
         case BuilderInstancePrivate::fp_cui_finished:
             build();
             break;
@@ -537,9 +580,8 @@ void BuilderInstance::onPrivateEvent(int eventType)
                     emit builder_error(no_permission);
                     break;
                 case FlatpakLauncher::unknownError:
+                default:
                     emit builder_error(unknownError);
-                    break;
-                default:;
             }
             break;
         }
@@ -557,13 +599,14 @@ void BuilderInstance::onPrivateEvent(int eventType)
                     emit builder_error(exe_not_exists);
                     break;
                 case GCCLauncher::unknownError:
+                default:
                     emit builder_error(unknownError);
                     break;
-                default:;
             }
             break;
         }
-        default:;
+        default:
+            emit builder_error(unknownError);
     }
 }
 
@@ -572,6 +615,14 @@ BuilderInstancePrivate::BuilderInstancePrivate(BuilderInstance* parent)
     this->q_ptr = parent;
     buildStage = 0;
 
+    connect(&compressor,
+            SIGNAL(launcher_status_changed(CommandLauncher::launcher_status)),
+            this,
+            SLOT(onCompressorStatusChanged(CommandLauncher::launcher_status)));
+    connect(&compressor,
+            SIGNAL(compressorError(CompressorLauncher::ErrorCode)),
+            this,
+            SLOT(onCompressorError(CompressorLauncher::ErrorCode)));
     connect(&fp_cui,
             SIGNAL(launcher_status_changed(CommandLauncher::launcher_status)),
             this,
@@ -609,28 +660,72 @@ int BuilderInstancePrivate::getSourceIndexByID(int sourceID)
     return -1;
 }
 
+bool BuilderInstancePrivate::prepareSource()
+{
+    if (sourceList.count() < 1)
+        return true;
+
+    bool needToWait = false;
+    for (int i=0; i<sourceList.count(); i++)
+    {
+        QString sourceURL;
+        sourceURL = QString(sourceList[i].url).replace("file://", "");
+
+        if (sourceList[i].type == FLATPAK_MANIFEST_SOURCE_TYPE_ARCHIVE &&
+            sourceList[i].checksum.value.isEmpty())
+        {
+            // Do a minimum checksum test
+            sourceList[i].checksum.algorithm = "md5";
+            sourceList[i].checksum.value =
+                ChecksumCalculator::getFileChecksum(sourceURL,
+                                                    ChecksumCalculator::md5);
+        }
+        if (sourceList[i].type == FLATPAK_MANIFEST_SOURCE_TYPE_DIRECTORY)
+        {
+            // Archive directory to a single file
+            QString archiveFileName;
+            archiveFileName = QString("source_%1.tar")
+                                     .arg(QString::number(i + 1))
+                                     .prepend('/').prepend(workingDir);
+            compressor.setWorkingDirectory(sourceURL);
+            compressor.compress(".",
+                                archiveFileName,
+                                CompressorLauncher::TarFile);
+            sourceList[i].url = archiveFileName.prepend("file://");
+            sourceList[i].type = FLATPAK_MANIFEST_SOURCE_TYPE_ARCHIVE;
+            needToWait = true;
+        }
+        if (needToWait)
+            break;
+    }
+    if (needToWait)
+        return false;
+
+    // Initialize the module list in ManifestContainer during the first call
+    if (manifest.getModules().count() < 1)
+    {
+        QMap<int,int>::const_iterator j;
+        ManifestContainer::ModuleProperty module;
+        for (int i=0; i<moduleList.count(); i++)
+        {
+            // Add sources to module
+            module = moduleList[i];
+            for (j=sourceIDs.constBegin(); j!=sourceIDs.constEnd(); j++)
+            {
+                if (j.value() == moduleIDs[i])
+                    module.sources.push_back(
+                                    sourceList[getSourceIndexByID(j.key())]);
+            }
+            manifest.addModules(module);
+        }
+    }
+    return true;
+}
+
 bool BuilderInstancePrivate::buildManifest()
 {
     if (moduleList.count() < 1 || sourceList.count() < 1)
         return false;
-
-    QMap<int,int>::const_iterator j;
-    ManifestContainer::ModuleProperty module;
-    manifest.clearModules();
-    for (int i=0; i<moduleList.count(); i++)
-    {
-        // Add sources to module
-        int count = 0;
-        module = moduleList[i];
-        for (j=sourceIDs.constBegin(); j!=sourceIDs.constEnd(); j++)
-        {
-            if (j.value() == moduleIDs[i])
-                module.sources.push_back(sourceList[count]);
-            count++;
-        }
-
-        manifest.addModules(module);
-    }
 
     QList<QString> finishArgs;
     if (permission & BuilderInstance::AllowIPC)
@@ -716,7 +811,8 @@ void BuilderInstancePrivate::buildExecutableHeader(bool preRun)
         resourceFile.setFileName(fileList[i]);
         resourceFile.open(QFile::ReadOnly);
 
-        fileList[i] = fileList[i].mid(fileList[i].lastIndexOf('/') + 1);
+        fileList[i] = fileList[i].mid(fileList[i].lastIndexOf('/'))
+                                 .prepend(workingDir);
         tempFile.setFileName(fileList[i]);
         tempFile.open(QFile::WriteOnly);
         tempFile.write(resourceFile.readAll());
@@ -794,6 +890,18 @@ bool BuilderInstancePrivate::logCuiOutput(bool append)
     log.write(gcc_cui.output());
     log.close();
     return true;
+}
+
+void BuilderInstancePrivate::onCompressorError(CompressorLauncher::ErrorCode errCode)
+{
+    compressorErrorCode = errCode;
+    emit privateEvent(compressor_error);
+}
+
+void BuilderInstancePrivate::onCompressorStatusChanged(CommandLauncher::launcher_status status)
+{
+    if (status == CommandLauncher::finished)
+        emit privateEvent(compressor_finished);
 }
 
 void BuilderInstancePrivate::onFlatpakCuiStatusChanged(

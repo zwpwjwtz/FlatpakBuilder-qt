@@ -36,6 +36,12 @@ public:
         bool noDebugInfo = true;
     };
 
+    struct ChecksumType
+    {
+        QString algorithm;
+        QByteArray value;
+    };
+
     struct ModuleSource
     {
         QString type;
@@ -43,6 +49,7 @@ public:
         QString branch;
         QList<QString> commands;
         QString destFilename;
+        ChecksumType checksum;
     };
 
     struct ModuleProperty

@@ -20,7 +20,7 @@ void DialogConfigModule::showEvent(QShowEvent* event)
     switch(sourceType)
     {
         case BuilderInstance::ArchiveSource:
-            typeIndex = 3;
+            typeIndex = 4;
             break;
         case BuilderInstance::GitSource:
             typeIndex = 0;
@@ -29,17 +29,19 @@ void DialogConfigModule::showEvent(QShowEvent* event)
             typeIndex = 1;
             break;
         case BuilderInstance::FileSource:
-            typeIndex = 4;
-            break;
-        case BuilderInstance::ScriptSource:
             typeIndex = 5;
             break;
-        case BuilderInstance::ShellSource:
+        case BuilderInstance::ScriptSource:
             typeIndex = 6;
+            break;
+        case BuilderInstance::ShellSource:
+            typeIndex = 7;
             break;
         case BuilderInstance::PatchSource:
             typeIndex = 2;
             break;
+        case BuilderInstance::DirectorySource:
+            typeIndex = 3;
         default:
             typeIndex = -1;
     }
@@ -63,15 +65,18 @@ void DialogConfigModule::on_buttonBox_accepted()
             sourceType = BuilderInstance::PatchSource;
             break;
         case 3:
-            sourceType = BuilderInstance::ArchiveSource;
+            sourceType = BuilderInstance::DirectorySource;
             break;
         case 4:
-            sourceType = BuilderInstance::FileSource;
+            sourceType = BuilderInstance::ArchiveSource;
             break;
         case 5:
-            sourceType = BuilderInstance::ScriptSource;
+            sourceType = BuilderInstance::FileSource;
             break;
         case 6:
+            sourceType = BuilderInstance::ScriptSource;
+            break;
+        case 7:
             sourceType = BuilderInstance::ShellSource;
             break;
         default:

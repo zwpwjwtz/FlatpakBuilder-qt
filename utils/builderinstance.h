@@ -37,7 +37,8 @@ public:
         FileSource = 4,
         ScriptSource = 5,
         ShellSource = 6,
-        PatchSource = 7
+        PatchSource = 7,
+        DirectorySource = 8
     };
     enum BuilderErrorCode
     {
@@ -50,15 +51,17 @@ public:
         no_permission = 130,
         bundle_not_exists = 131,
         compiler_not_working = 132,
+        compressor_not_working = 133,
         unknownError = 255,
     };
     enum BuilderStage
     {
         Wait = 0,
-        BuildManifest = 1,
-        BuildRepo = 2,
-        BuildBundle = 3,
-        BuildExecutable = 4
+        PrepareSource = 1,
+        BuildManifest = 2,
+        BuildRepo = 3,
+        BuildBundle = 4,
+        BuildExecutable = 5
     };
 
     explicit BuilderInstance();
