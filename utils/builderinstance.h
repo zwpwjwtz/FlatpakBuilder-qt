@@ -140,9 +140,10 @@ public:
     void setPermission(const AppPermissions permission);
 
 signals:
-    void builder_error(BuilderErrorCode errCode);
-    void builder_staged(BuilderStage stage);
+    void builder_error(BuilderInstance::BuilderErrorCode errCode);
+    void builder_staged(BuilderInstance::BuilderStage stage);
     void builder_finished();
+    void output_updated();
 
 private slots:
     void onPrivateEvent(int eventType);

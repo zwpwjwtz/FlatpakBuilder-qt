@@ -46,6 +46,18 @@ BuildWizard::BuildWizard(QWidget *parent) :
            SIGNAL(builder_finished()),
            this,
            SLOT(onBuilderFinished()));
+    connect(&builder,
+           SIGNAL(builder_staged(BuilderInstance::BuilderStage)),
+           this,
+           SLOT(onBuilderStaged(BuilderInstance::BuilderStage)));
+    connect(&builder,
+           SIGNAL(builder_error(BuilderInstance::BuilderErrorCode)),
+           this,
+           SLOT(onBuilderError(BuilderInstance::BuilderErrorCode)));
+    connect(&builder,
+            SIGNAL(output_updated()),
+            this,
+            SLOT(onBuilderOutputUpdated()));
 }
 
 BuildWizard::~BuildWizard()
@@ -193,11 +205,122 @@ void BuildWizard::startBuild()
                         .append('/')
                         .append(FPBDQT_FILE_LOG_DEFAULT));
     builder.build();
+
+    buildLogSize = 0;
+    ui->textProgressDetails->clear();
+    if (builder.makingExecutable())
+        ui->progressBuild->setMaximum(BuilderInstance::BuildExecutable);
+    else
+        ui->progressBuild->setMaximum(BuilderInstance::BuildBundle);
+}
+
+void BuildWizard::updateBuildDetails()
+{
+    static QByteArray newBuildDetails;
+
+    QFile buildLog(builder.logFile());
+    buildLog.open(QFile::ReadOnly);
+    buildLog.seek(buildLogSize);
+    newBuildDetails = buildLog.readAll();
+    if (newBuildDetails.length() > 0)
+    {
+        ui->textProgressDetails->appendPlainText(newBuildDetails);
+        buildLogSize += newBuildDetails.length();
+    }
+    buildLog.close();
 }
 
 void BuildWizard::onBuilderFinished()
 {
+    ui->progressBuild->setValue(0);
     next();
+}
+
+void BuildWizard::onBuilderStaged(BuilderInstance::BuilderStage stage)
+{
+    ui->progressBuild->setValue(int(stage));
+
+    QString stageText;
+    switch (stage)
+    {
+        case BuilderInstance::PrepareSource:
+            stageText = "Preparing sources";
+            break;
+        case BuilderInstance::BuildManifest:
+            stageText = "Building manifest file";
+            break;
+        case BuilderInstance::BuildRepo:
+            stageText = "Building repository";
+            break;
+        case BuilderInstance::BuildBundle:
+            stageText = "Exporting bundle file";
+            break;
+        case BuilderInstance::BuildExecutable:
+            stageText = "Building executable";
+            break;
+        default:;
+    }
+    ui->labelProgress->setText(
+                QString("Progress: %1 (%2/%3)")
+                       .arg(stageText)
+                       .arg(QString::number(int(stage)))
+                       .arg(QString::number(ui->progressBuild->maximum())));
+
+    updateBuildDetails();
+}
+
+void BuildWizard::onBuilderError(BuilderInstance::BuilderErrorCode errCode)
+{
+    switch (errCode)
+    {
+        case BuilderInstance::ok:
+            return;
+        case BuilderInstance::working_dir_not_exists:
+            QMessageBox::critical(this, "Path not existed",
+                                  "The build path that you selected "
+                                  "does not exists.");
+            break;
+        case BuilderInstance::manifest_not_generated:
+        case BuilderInstance::repo_not_exists:
+        case BuilderInstance::build_dir_not_exists:
+        case BuilderInstance::no_permission:
+            QMessageBox::critical(this, "Permission denied",
+                                  QString("Failed to create files or directories"
+                                          " under build path:\n%1\n"
+                                          "Please make sure that "
+                                           "you have the right permission.")
+                                         .arg(lastBuildPath));
+            break;
+        case BuilderInstance::exe_not_exists:
+            break;
+        case BuilderInstance::bundle_not_exists:
+            QMessageBox::critical(this, "Bundle exporting failed",
+                                  "Failed to export built repository as "
+                                  "flatpak bundle file. Aborted.");
+            break;
+        case BuilderInstance::compiler_not_working:
+            QMessageBox::critical(this, "Compiler failed",
+                                  "Failed to build additional sources with "
+                                  "compiler in the host system.");
+            break;
+        case BuilderInstance::compressor_not_working:
+            QMessageBox::critical(this, "Compressor failed",
+                                  "Failed to prepare build sources with "
+                                  "compressor in the host system. Aborted.");
+            break;
+        case BuilderInstance::unknownError:
+        default:
+            QMessageBox::critical(this, "Unknown error",
+                                  "Unknown error occured, we are not able to "
+                                  "continue building. Please check build log "
+                                  "for more information.");
+    }
+    next();
+}
+
+void BuildWizard::onBuilderOutputUpdated()
+{
+    updateBuildDetails();
 }
 
 void BuildWizard::on_pushButton_clicked()
@@ -412,4 +535,14 @@ void BuildWizard::on_labelChangeTargetPath_linkActivated(const QString &link)
                                                 ui->labelTargetFile->text());
     if (!path.isEmpty())
         ui->labelTargetFile->setText(path);
+}
+
+void BuildWizard::on_buttonShowProgressDetails_clicked()
+{
+    ui->tabProgress->setCurrentIndex(1);
+}
+
+void BuildWizard::on_buttonHideProgressDetails_clicked()
+{
+    ui->tabProgress->setCurrentIndex(0);
 }

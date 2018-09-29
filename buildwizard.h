@@ -22,6 +22,9 @@ public:
 
 private slots:
     void onBuilderFinished();
+    void onBuilderStaged(BuilderInstance::BuilderStage stage);
+    void onBuilderError(BuilderInstance::BuilderErrorCode errCode);
+    void onBuilderOutputUpdated();
 
     void on_pushButton_clicked();
     void on_pushButton_2_clicked();
@@ -33,6 +36,8 @@ private slots:
     void on_labelChangeSrcDir_linkActivated(const QString &link);
     void on_buttonAbout_clicked();
     void on_labelChangeTargetPath_linkActivated(const QString &link);
+    void on_buttonShowProgressDetails_clicked();
+    void on_buttonHideProgressDetails_clicked();
 
 private:
     Ui::BuildWizard *ui;
@@ -44,11 +49,13 @@ private:
     QString lastFileFilter;
     BuilderInstance builder;
     int moduleID;
+    int buildLogSize;
 
     bool detectEssentials();
     QString getDefaultProjectName(QString fileName);
     void updateModuleList();
     void startBuild();
+    void updateBuildDetails();
 };
 
 #endif // BUILDWIZARD_H

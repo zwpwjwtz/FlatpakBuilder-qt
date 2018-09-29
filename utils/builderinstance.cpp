@@ -33,6 +33,9 @@ void BuilderInstance::build()
     switch (d->buildStage)
     {
         case 0:
+            d->logCuiOutput(false);
+            d->timer.start();
+
             d->buildStage++;
             emit builder_staged(PrepareSource);
             d->manifest.clearModules();
@@ -52,13 +55,11 @@ void BuilderInstance::build()
             d->buildRepo();
             break;
         case 3:
-            d->logCuiOutput(false);
             d->buildStage++;
             emit builder_staged(BuildBundle);
             d->buildBundle();
             break;
         case 4:
-            d->logCuiOutput(true);
             if (d->makingExecutable)
             {
                 d->buildStage++;
@@ -69,23 +70,22 @@ void BuilderInstance::build()
                 finished = true;
             break;
         case 5:
-            d->logCuiOutput(true);
             d->buildStage++;
             d->buildExecutableHeader();
             break;
         case 6:
-            d->logCuiOutput(true);
             d->buildStage++;
             d->buildExecutable();
             break;
         case 7:
-            d->logCuiOutput(true);
             finished = true;
         default:;
     }
     if (finished)
     {
+        d->timer.stop();
         d->buildStage = 0;
+        d->logCuiOutput();
         emit builder_finished();
     }
 }
@@ -553,6 +553,7 @@ void BuilderInstance::onPrivateEvent(int eventType)
                     emit builder_error(unknownError);
                     break;
             }
+            d->timer.stop();
             break;
         case BuilderInstancePrivate::fp_cui_finished:
             build();
@@ -603,16 +604,20 @@ void BuilderInstance::onPrivateEvent(int eventType)
                     emit builder_error(unknownError);
                     break;
             }
+            d->timer.stop();
             break;
         }
         default:
             emit builder_error(unknownError);
+            d->timer.stop();
     }
 }
 
 BuilderInstancePrivate::BuilderInstancePrivate(BuilderInstance* parent)
 {
     this->q_ptr = parent;
+
+    timer.setInterval(2000);
     buildStage = 0;
 
     connect(&compressor,
@@ -639,6 +644,10 @@ BuilderInstancePrivate::BuilderInstancePrivate(BuilderInstance* parent)
             SIGNAL(launcherError(GCCLauncher::ErrorCode)),
             this,
             SLOT(onGCCCuiError(GCCLauncher::ErrorCode)));
+    connect(&timer,
+            SIGNAL(timeout()),
+            this,
+            SLOT(onTimerTimeout()));
 }
 
 int BuilderInstancePrivate::getModuleIndexByID(int moduleID)
@@ -878,6 +887,8 @@ void BuilderInstancePrivate::buildExecutable()
 
 bool BuilderInstancePrivate::logCuiOutput(bool append)
 {
+    Q_Q(BuilderInstance);
+
     QFile log(logPath);
     if (append)
         log.open(QFile::Append);
@@ -886,9 +897,15 @@ bool BuilderInstancePrivate::logCuiOutput(bool append)
     if (!log.isOpen())
         return false;
 
+    int oldFileSize = log.size();
+    log.write(compressor.output());
     log.write(fp_cui.output());
     log.write(gcc_cui.output());
     log.close();
+
+    if (oldFileSize < log.size())
+        emit q->output_updated();
+
     return true;
 }
 
@@ -929,4 +946,9 @@ void BuilderInstancePrivate::onGCCCuiStatusChanged(
 {
     if (status == CommandLauncher::finished)
         emit privateEvent(gcc_cui_finished);
+}
+
+void BuilderInstancePrivate::onTimerTimeout()
+{
+    logCuiOutput();
 }

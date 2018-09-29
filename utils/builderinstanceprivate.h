@@ -2,6 +2,7 @@
 #define BUILDERINSTANCEPRIVATE_H
 
 #include <QMap>
+#include <QTimer>
 #include "manifestcontainer.h"
 #include "compressorlauncher.h"
 #include "flatpaklauncher.h"
@@ -36,6 +37,8 @@ public:
     GCCLauncher gcc_cui;
     GCCLauncher::ErrorCode gccCuiErrorCode;
 
+    QTimer timer;
+
     int buildStage;
     bool makingExecutable;
 
@@ -65,7 +68,7 @@ public:
     void buildBundle();
     void buildExecutableHeader(bool preRun = false);
     void buildExecutable();
-    bool logCuiOutput(bool append);
+    bool logCuiOutput(bool append = true);
 
 signals:
     void privateEvent(int eventType);
@@ -77,6 +80,7 @@ public slots:
     void onFlatpakCuiStatusChanged(CommandLauncher::launcher_status status);
     void onGCCCuiError(GCCLauncher::ErrorCode errCode);
     void onGCCCuiStatusChanged(CommandLauncher::launcher_status status);
+    void onTimerTimeout();
 };
 
 #endif // BUILDERINSTANCEPRIVATE_H
