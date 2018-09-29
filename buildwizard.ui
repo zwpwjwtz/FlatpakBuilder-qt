@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>400</width>
-    <height>300</height>
+    <height>308</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -249,14 +249,34 @@
      </layout>
     </item>
     <item>
-     <widget class="QLabel" name="label_7">
-      <property name="text">
-       <string>Built package will be :</string>
-      </property>
-      <property name="wordWrap">
-       <bool>true</bool>
-      </property>
-     </widget>
+     <layout class="QHBoxLayout" name="horizontalLayout_11">
+      <item>
+       <widget class="QLabel" name="label_7">
+        <property name="text">
+         <string>Built package will be :</string>
+        </property>
+        <property name="wordWrap">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="labelChangeTargetPath">
+        <property name="cursor">
+         <cursorShape>PointingHandCursor</cursorShape>
+        </property>
+        <property name="text">
+         <string>&lt;a href=&quot;#&quot;&gt;&lt;span style=&quot;text-decoration: none; color:#55aaff;&quot;&gt;Modify&lt;/span&gt;&lt;/a&gt;</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+        </property>
+        <property name="textInteractionFlags">
+         <set>Qt::LinksAccessibleByKeyboard|Qt::LinksAccessibleByMouse</set>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </item>
     <item>
      <widget class="QLabel" name="labelTargetFile">
@@ -338,9 +358,6 @@
         </property>
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_4">
-          <property name="spacing">
-           <number>0</number>
-          </property>
           <item>
            <widget class="QLabel" name="label_9">
             <property name="text">
@@ -355,9 +372,6 @@
         </item>
         <item>
          <layout class="QHBoxLayout" name="horizontalLayout_5">
-          <property name="spacing">
-           <number>0</number>
-          </property>
           <item>
            <widget class="QLabel" name="label_14">
             <property name="text">
@@ -432,7 +446,7 @@
             <property name="maximumSize">
              <size>
               <width>40</width>
-              <height>16777215</height>
+              <height>40</height>
              </size>
             </property>
             <property name="text">
@@ -445,7 +459,7 @@
             <property name="maximumSize">
              <size>
               <width>40</width>
-              <height>16777215</height>
+              <height>40</height>
              </size>
             </property>
             <property name="text">
@@ -458,7 +472,7 @@
             <property name="maximumSize">
              <size>
               <width>40</width>
-              <height>16777215</height>
+              <height>40</height>
              </size>
             </property>
             <property name="text">
@@ -531,7 +545,17 @@
            </widget>
           </item>
           <item>
-           <widget class="QLineEdit" name="textRuntime"/>
+           <widget class="QComboBox" name="comboRuntime">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="editable">
+             <bool>true</bool>
+            </property>
+           </widget>
           </item>
          </layout>
         </item>
@@ -545,7 +569,17 @@
            </widget>
           </item>
           <item>
-           <widget class="QLineEdit" name="textSDK"/>
+           <widget class="QComboBox" name="comboSDK">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="editable">
+             <bool>true</bool>
+            </property>
+           </widget>
           </item>
          </layout>
         </item>
@@ -559,7 +593,17 @@
            </widget>
           </item>
           <item>
-           <widget class="QLineEdit" name="textRuntimeVer"/>
+           <widget class="QComboBox" name="comboRuntimeVer">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="editable">
+             <bool>true</bool>
+            </property>
+           </widget>
           </item>
          </layout>
         </item>

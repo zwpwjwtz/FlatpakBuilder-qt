@@ -39,7 +39,8 @@ SOURCES += main.cpp \
     utils/commandlauncher.cpp \
     utils/gcclauncher.cpp \
     utils/compressorlauncher.cpp \
-    utils/checksumcalculator.cpp
+    utils/checksumcalculator.cpp \
+    utils/flatpakhelper.cpp
 
 HEADERS  += \
     buildwizard.h \
@@ -60,7 +61,9 @@ HEADERS  += \
     utils/gcclauncherprivate.h \
     utils/compressorlauncher.h \
     utils/compressorlauncherprivate.h \
-    utils/checksumcalculator.h
+    utils/checksumcalculator.h \
+    utils/flatpakhelper.h \
+    utils/flatpakhelperprivate.h
 
 FORMS    += \
     buildwizard.ui \

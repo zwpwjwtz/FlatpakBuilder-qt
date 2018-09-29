@@ -3,6 +3,7 @@
 #include "dialogconfigmodule.h"
 #include "aboutwindow.h"
 #include "utils/exeprober.h"
+#include "utils/flatpakhelper.h"
 #include "utils/manifestcontainer.h"
 
 #include <QFileDialog>
@@ -13,8 +14,6 @@
 #define FPBDQT_COMMAND_FPBUILDER_PROBEARGS "--version"
 #define FPBDQT_COMMAND_SDK_QMAKE "qmake"
 #define FPBDQT_COMMAND_SDK_QMAKE_PROBEARGS "--version"
-
-#define FPBDQT_LIBRARY_FLATPAK_RUNTIME "/var/lib/flatpak/runtime"
 
 #define FPBDQT_FILE_SUFFIX_ALL "All (*.*)(*.*)"
 #define FPBDQT_FILE_SUFFIX_PRO "Qt Project File (*.pro)(*.pro)"
@@ -125,68 +124,6 @@ bool BuildWizard::detectEssentials()
 
 }
 
-bool BuildWizard::detectRuntime(QString &rtName, QString &rtVersion)
-{
-    // Read runtime directory and get the first entry
-    QString dirName = findFirstDirEntry(FPBDQT_LIBRARY_FLATPAK_RUNTIME);
-    if (dirName.isEmpty())
-        return false;
-    rtName = dirName;
-
-    // Read the first entry of the entry we have found
-    // It should be a directory having name like "x86_64"
-    dirName = QString(FPBDQT_LIBRARY_FLATPAK_RUNTIME)
-            .append('/').append(rtName);
-    dirName = findFirstDirEntry(dirName);
-    if (dirName.isEmpty())
-        return false;
-
-    // Read the first entry in the third level directory
-    // It should be a directory having a version-like name
-    dirName = QString(FPBDQT_LIBRARY_FLATPAK_RUNTIME)
-            .append('/').append(rtName)
-            .append('/').append(dirName);
-    dirName = findFirstDirEntry(dirName);
-    if (dirName.isEmpty())
-        return false;
-    rtVersion = dirName;
-
-    return true;
-}
-
-bool BuildWizard::detectSdk(QString &sdkName)
-{
-    // Simply get name from related runtime
-    QString version;
-    detectRuntime(sdkName, version);
-    if (sdkName.isEmpty())
-        return false;
-
-    sdkName.truncate(sdkName.lastIndexOf('.'));
-    sdkName.append(".Sdk");
-
-    return true;
-}
-
-QString BuildWizard::findFirstDirEntry(QString path)
-{
-    QString found;
-
-    QDir dir(path);
-    QFileInfo fileInfo;
-    for (int i=0; i<dir.entryList().count(); i++)
-    {
-        if (dir.entryList()[i] == "." || dir.entryList()[i] == "..")
-            continue;
-        fileInfo.setFile(dir, dir.entryList()[i]);
-        if (fileInfo.isReadable() && fileInfo.isDir())
-        {
-            found = dir.entryList()[i];
-            break;
-        }
-    }
-    return found;
-}
 
 void BuildWizard::updateModuleList()
 {
@@ -210,9 +147,9 @@ void BuildWizard::startBuild()
 {
     builder.setAppID(ui->textAppID->text());
     builder.setBranch(FPBDQT_APP_BRANCH_DEFAULT);
-    builder.setRuntime(ui->textRuntime->text());
-    builder.setSdkName(ui->textSDK->text());
-    builder.setRuntimeVer(ui->textRuntimeVer->text());
+    builder.setRuntime(ui->comboRuntime->currentText());
+    builder.setSdkName(ui->comboSDK->currentText());
+    builder.setRuntimeVer(ui->comboRuntimeVer->currentText());
     builder.setRunCmd(ui->textExeCmd->text());
     builder.setOwnName(ui->textOwnName->text());
 
@@ -314,7 +251,7 @@ void BuildWizard::on_BuildWizard_currentIdChanged(int id)
         case 1:
             if (!detectEssentials())
                 accepted = false;
-                break;
+            break;
         case 2:
             if (ui->textProPath->text().isEmpty())
                 accepted = false;
@@ -326,22 +263,23 @@ void BuildWizard::on_BuildWizard_currentIdChanged(int id)
                 break;
             }
 
-            if (ui->textRuntime->text().isEmpty())
+            if (ui->comboRuntime->currentText().isEmpty())
             {
-                QString rtName, rtVersion;
-                if (detectRuntime(rtName, rtVersion))
+                QList<FlatpakHelper::RuntimeInfo> runtimeList =
+                                                FlatpakHelper::getRuntimeList();
+                for (int i=0; i<runtimeList.count(); i++)
                 {
-                    ui->textRuntime->setText(rtName);
-                    ui->textRuntimeVer->setText(rtVersion);
+                    ui->comboRuntime->addItem(runtimeList[i].name);
+                    if (ui->comboRuntimeVer->findText(runtimeList[i].version) < 0)
+                        ui->comboRuntimeVer->addItem(runtimeList[i].version);
                 }
             }
-            if (ui->textSDK->text().isEmpty())
+            if (ui->comboSDK->currentText().isEmpty())
             {
-                QString sdkName;
-                if (detectSdk(sdkName))
-                {
-                    ui->textSDK->setText(sdkName);
-                }
+                QList<FlatpakHelper::RuntimeInfo> sdkList =
+                                                    FlatpakHelper::getSDKList();
+                for (int i=0; i<sdkList.count(); i++)
+                    ui->comboSDK->addItem(sdkList[i].name);
             }
             if (builder.moduleList().isEmpty())
             {
@@ -365,9 +303,9 @@ void BuildWizard::on_BuildWizard_currentIdChanged(int id)
         case 4:
             if (ui->textAppID->text().isEmpty())
                 accepted = false;
-            if (ui->textRuntime->text().isEmpty())
-                accepted = false;
-            if (ui->textSDK->text().isEmpty())
+            if (ui->comboRuntime->currentText().isEmpty() ||
+                ui->comboSDK->currentText().isEmpty() ||
+                ui->comboSDK->currentText().isEmpty())
                 accepted = false;
             if (accepted)
             {
@@ -463,4 +401,15 @@ void BuildWizard::on_buttonAbout_clicked()
     if (!about)
         about = new AboutWindow(this);
     about->show();
+}
+
+void BuildWizard::on_labelChangeTargetPath_linkActivated(const QString &link)
+{
+    Q_UNUSED(link)
+
+    QString path = QFileDialog::getSaveFileName(this,
+                                                "Select target file",
+                                                ui->labelTargetFile->text());
+    if (!path.isEmpty())
+        ui->labelTargetFile->setText(path);
 }

@@ -32,6 +32,7 @@ private slots:
     void on_tableModule_doubleClicked(const QModelIndex &index);
     void on_labelChangeSrcDir_linkActivated(const QString &link);
     void on_buttonAbout_clicked();
+    void on_labelChangeTargetPath_linkActivated(const QString &link);
 
 private:
     Ui::BuildWizard *ui;
@@ -44,11 +45,8 @@ private:
     BuilderInstance builder;
     int moduleID;
 
-    QString getDefaultProjectName(QString fileName);
     bool detectEssentials();
-    bool detectRuntime(QString& rtName, QString& rtVersion);
-    bool detectSdk(QString& sdkName);
-    QString findFirstDirEntry(QString path);
+    QString getDefaultProjectName(QString fileName);
     void updateModuleList();
     void startBuild();
 };
